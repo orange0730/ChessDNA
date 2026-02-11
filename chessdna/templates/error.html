@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ChessDNA Error</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;max-width:900px;margin:24px auto;padding:0 16px;}
+    pre{background:#111;color:#eee;padding:12px;border-radius:8px;overflow:auto;}
+    code{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;}
+  </style>
+</head>
+<body>
+  <h1>分析失敗（Internal Server Error）</h1>
+  <p>{{ hint }}</p>
+
+  <p>engine_path: <code>{{ engine_path }}</code></p>
+
+  <h2>錯誤訊息</h2>
+  <pre>{{ error }}</pre>
+
+  <p><a href="/">回首頁</a></p>
+</body>
+</html>

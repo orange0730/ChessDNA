@@ -14,5 +14,6 @@ build/
 
 # reports / samples
 *.json
-*.html
+# (keep templates/*.html tracked)
+
 _sample_*.pgn

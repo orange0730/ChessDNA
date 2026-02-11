@@ -15,7 +15,39 @@
     .mistake{background:#ffe0b2;}
     .blunder{background:#ffccbc;}
     code{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;}
+
+    .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0 14px;}
+    .chip{border:1px solid #ddd;border-radius:999px;padding:6px 10px;background:#fff;cursor:pointer;font-size:13px;}
+    .chip input{margin-right:6px;}
+
+    tr.tp{background:#fff3e0;}
+    tr.worst{background:#ffebee;}
+    tr.playerRow td:first-child{font-weight:700;}
+
+    .muted{color:#666;}
   </style>
+
+  <script>
+    function applyFilters(gameIndex){
+      const root=document.getElementById('game-'+gameIndex);
+      if(!root) return;
+
+      const onlyPlayer = root.querySelector('input[data-filter="onlyPlayer"]').checked;
+      const onlyBad    = root.querySelector('input[data-filter="onlyBad"]').checked;
+      const onlyTP     = root.querySelector('input[data-filter="onlyTP"]').checked;
+      const onlyWorst  = root.querySelector('input[data-filter="onlyWorst"]').checked;
+
+      const rows = root.querySelectorAll('tbody tr[data-ply]');
+      rows.forEach(r=>{
+        let show=true;
+        if(onlyPlayer && r.dataset.isPlayer !== '1') show=false;
+        if(onlyBad && !(r.dataset.label==='inaccuracy' || r.dataset.label==='mistake' || r.dataset.label==='blunder')) show=false;
+        if(onlyTP && r.dataset.isTurning !== '1') show=false;
+        if(onlyWorst && r.dataset.isWorst !== '1') show=false;
+        r.style.display = show ? '' : 'none';
+      });
+    }
+  </script>
 </head>
 <body>
   <h1>ChessDNA Report</h1>
@@ -64,34 +96,55 @@
       </div>
     {% endif %}
 
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Side</th>
-          <th>Move</th>
-          <th>Best (cp)</th>
-          <th>Played (cp)</th>
-          <th>CPL</th>
-          <th>Acc</th>
-          <th>Label</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in g.plies %}
+    <div id="game-{{ loop.index }}">
+      <div class="filters">
+        <label class="chip"><input type="checkbox" data-filter="onlyPlayer" onchange="applyFilters({{ loop.index }})" {% if report.player_name %}{% else %}disabled{% endif %}/>只看 player</label>
+        <label class="chip"><input type="checkbox" data-filter="onlyBad" onchange="applyFilters({{ loop.index }})"/>只看失誤(>=inaccuracy)</label>
+        <label class="chip"><input type="checkbox" data-filter="onlyTP" onchange="applyFilters({{ loop.index }})"/>只看 turning points</label>
+        <label class="chip"><input type="checkbox" data-filter="onlyWorst" onchange="applyFilters({{ loop.index }})" {% if report.player_name %}{% else %}disabled{% endif %}/>只看 player worst</label>
+        <span class="muted">提示：CPL 越大越傷。</span>
+      </div>
+
+      <table>
+        <thead>
           <tr>
-            <td>{{ p.ply }}</td>
-            <td>{{ p.side }}</td>
-            <td><code>{{ p.san }}</code></td>
-            <td>{{ p.best_cp }}</td>
-            <td>{{ p.played_cp }}</td>
-            <td>{{ p.cpl }}</td>
-            <td>{{ '%.1f' % p.accuracy if p.accuracy is not none else '' }}</td>
-            <td><span class="tag {{ p.label }}">{{ p.label }}</span></td>
+            <th>#</th>
+            <th>Side</th>
+            <th>Move</th>
+            <th>Best (cp)</th>
+            <th>Played (cp)</th>
+            <th>CPL</th>
+            <th>Acc</th>
+            <th>Label</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for p in g.plies %}
+            {% set is_turning = (p.ply in g.turning_points) %}
+            {% set is_worst = (report.player_name and (p.ply in g.player_worst)) %}
+            {% set is_player = (report.player_name and g.player_side and (p.side == g.player_side)) %}
+            <tr
+              data-ply="{{ p.ply }}"
+              data-side="{{ p.side }}"
+              data-label="{{ p.label }}"
+              data-is-turning="{{ 1 if is_turning else 0 }}"
+              data-is-worst="{{ 1 if is_worst else 0 }}"
+              data-is-player="{{ 1 if is_player else 0 }}"
+              class="{% if is_turning %}tp{% endif %} {% if is_worst %}worst{% endif %} {% if is_player %}playerRow{% endif %}"
+            >
+              <td>{{ p.ply }}</td>
+              <td>{{ p.side }}</td>
+              <td><code>{{ p.san }}</code></td>
+              <td>{{ p.best_cp }}</td>
+              <td>{{ p.played_cp }}</td>
+              <td>{{ p.cpl }}</td>
+              <td>{{ '%.1f' % p.accuracy if p.accuracy is not none else '' }}</td>
+              <td><span class="tag {{ p.label }}">{{ p.label }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% endfor %}
 
   <p><a href="/">回首頁</a></p>

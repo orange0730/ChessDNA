@@ -40,7 +40,7 @@ def main():
             time_per_move=args.t,
             max_plies=args.max_plies,
         )
-        Path(args.out).write_text(report.model_dump_json(indent=2, ensure_ascii=False), encoding="utf-8")
+        Path(args.out).write_text(report.model_dump_json(indent=2), encoding="utf-8")
         print(f"[OK] wrote {args.out}")
 
 

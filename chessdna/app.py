@@ -60,7 +60,7 @@ async def analyze(
 
     # Also write a copy to a temp file (useful for debugging/demo)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w", encoding="utf-8") as f:
-        f.write(report.model_dump_json(indent=2, ensure_ascii=False))
+        f.write(report.model_dump_json(indent=2))
         debug_path = f.name
 
     return TEMPLATES.TemplateResponse(

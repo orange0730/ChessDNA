@@ -82,8 +82,8 @@ class UciEngine:
         *,
         movetime_ms: int,
         searchmoves: list[str] | None = None,
-    ) -> tuple[int, str]:
-        """Return (score_cp_from_side_to_move, bestmove_uci).
+    ) -> tuple[int, str, list[str]]:
+        """Return (score_cp_from_side_to_move, bestmove_uci, pv_uci).
 
         If searchmoves is provided, restrict the search to those moves.
         This is useful to evaluate a specific played move in the *same* position.
@@ -100,6 +100,7 @@ class UciEngine:
             self._send(f"go movetime {movetime_ms}")
 
         last_score: UciScore | None = None
+        pv: list[str] = []
         bestmove = "0000"
 
         while True:
@@ -109,6 +110,12 @@ class UciEngine:
                 m = re.search(r"\bscore\s+(cp|mate)\s+(-?\d+)", line)
                 if m:
                     last_score = UciScore(m.group(1), int(m.group(2)))
+
+                # Try to capture principal variation
+                pv_m = re.search(r"\bpv\s+(.+)$", line)
+                if pv_m:
+                    pv = pv_m.group(1).strip().split()
+
             elif line.startswith("bestmove "):
                 parts = line.split()
                 if len(parts) >= 2:
@@ -125,4 +132,4 @@ class UciEngine:
             sign = 1 if last_score.value > 0 else -1 if last_score.value < 0 else 0
             score_cp = sign * (100000 - 1000 * abs(last_score.value))
 
-        return score_cp, bestmove
+        return score_cp, bestmove, pv

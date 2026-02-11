@@ -60,6 +60,20 @@
     debug json: <code>{{ debug_path }}</code>
   </p>
 
+  {% if report.player_overview %}
+    <div style="border:1px solid #eee;border-radius:14px;padding:12px;margin:10px 0 18px;">
+      <div style="font-weight:800;">Player overview — {{ report.player_overview.player_name }}</div>
+      <div class="muted">Games found: {{ report.player_overview.games_found }} / {{ report.player_overview.games_total }}</div>
+      <div>
+        Avg CPL: {{ '%.1f' % report.player_overview.avg_cpl if report.player_overview.avg_cpl is not none else 'n/a' }}
+        | Accuracy: {{ '%.1f' % report.player_overview.accuracy if report.player_overview.accuracy is not none else 'n/a' }}
+      </div>
+      <div>
+        Inaccuracy: {{ report.player_overview.inaccuracy }} | Mistake: {{ report.player_overview.mistake }} | Blunder: {{ report.player_overview.blunder }}
+      </div>
+    </div>
+  {% endif %}
+
   {% for g in report.games %}
     <hr/>
     <h2>
@@ -71,6 +85,19 @@
 
     {% if g.turning_points and g.turning_points|length > 0 %}
       <p><strong>Turning points (top CPL plies)</strong>: {{ g.turning_points | join(', ') }}</p>
+      <div class="muted" style="margin:6px 0 10px;">
+        {% for ply in g.turning_points %}
+          {% set p = g.plies[ply-1] %}
+          <div style="margin:4px 0;">
+            #{{ ply }} <code>{{ p.san }}</code>
+            — CPL {{ p.cpl }}
+            | best: <code>{{ p.bestmove_uci }}</code>
+            {% if p.pv_uci and p.pv_uci|length>0 %}
+              | pv: <code>{{ (p.pv_uci[:6]) | join(' ') }}</code>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
     {% endif %}
 
     <p>

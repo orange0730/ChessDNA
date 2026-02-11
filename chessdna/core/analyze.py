@@ -23,6 +23,10 @@ class PlyReport(BaseModel):
     accuracy: float | None = None
     label: Literal["ok", "inaccuracy", "mistake", "blunder"] = "ok"
 
+    # Coaching hints (best line from engine at this position)
+    bestmove_uci: str | None = None
+    pv_uci: list[str] = Field(default_factory=list)
+
 
 class GameReport(BaseModel):
     headers: dict[str, str] = Field(default_factory=dict)
@@ -47,12 +51,26 @@ class GameReport(BaseModel):
     player_worst: list[int] = Field(default_factory=list)  # ply numbers
 
 
+class PlayerOverview(BaseModel):
+    player_name: str
+    games_total: int
+    games_found: int
+
+    avg_cpl: float | None = None
+    accuracy: float | None = None
+
+    inaccuracy: int = 0
+    mistake: int = 0
+    blunder: int = 0
+
+
 class AnalyzeReport(BaseModel):
     games: list[GameReport]
     engine_path: str
     time_per_move: float
     max_plies: int
     player_name: str | None = None
+    player_overview: PlayerOverview | None = None
 
 
 def _cpl_label(cpl: int) -> str:
@@ -85,6 +103,13 @@ def analyze_pgn_text(
     games: list[GameReport] = []
 
     engine = UciEngine(engine_path)
+
+    # Cross-game player aggregates
+    agg_cpls: list[int] = []
+    agg_inacc = agg_mis = agg_blun = 0
+    games_total = 0
+    games_found = 0
+
     try:
         while True:
             game = chess.pgn.read_game(pgn_io)
@@ -104,13 +129,13 @@ def analyze_pgn_text(
                 movetime_ms = max(10, int(time_per_move * 1000))
 
                 # Best eval at current position from side-to-move perspective
-                best_cp, _ = engine.eval_position(moves_so_far, movetime_ms=movetime_ms)
+                best_cp, bestmove, pv = engine.eval_position(moves_so_far, movetime_ms=movetime_ms)
 
                 san = board.san(move)
                 uci = move.uci()
 
                 # Played-move eval in the SAME position (avoid perspective flip issues)
-                played_cp, _ = engine.eval_position(
+                played_cp, _played_bestmove, _played_pv = engine.eval_position(
                     moves_so_far,
                     movetime_ms=movetime_ms,
                     searchmoves=[uci],
@@ -135,6 +160,8 @@ def analyze_pgn_text(
                         cpl=cpl,
                         accuracy=acc,
                         label=label,  # type: ignore[arg-type]
+                        bestmove_uci=bestmove,
+                        pv_uci=pv,
                     )
                 )
 
@@ -174,6 +201,7 @@ def analyze_pgn_text(
                     p_side = "black"
 
                 if p_side:
+                    games_found += 1
                     p_plies = [p for p in plies if p.side == p_side and p.cpl is not None]
                     p_cpls = [p.cpl for p in p_plies if p.cpl is not None]
                     p_avg = sum(p_cpls) / len(p_cpls) if p_cpls else None
@@ -185,6 +213,13 @@ def analyze_pgn_text(
 
                     p_worst = [p.ply for p in sorted(p_plies, key=lambda x: x.cpl, reverse=True)[:5] if (p.cpl or 0) > 0]
 
+                    # aggregates
+                    agg_cpls.extend([int(x) for x in p_cpls])
+                    agg_inacc += p_inacc
+                    agg_mis += p_mis
+                    agg_blun += p_blun
+
+            games_total += 1
             games.append(
                 GameReport(
                     headers=headers,
@@ -207,10 +242,26 @@ def analyze_pgn_text(
     finally:
         engine.quit()
 
+    overview = None
+    if player_name:
+        avg = (sum(agg_cpls) / len(agg_cpls)) if agg_cpls else None
+        acc = _lichess_accuracy_from_cpl(avg) if avg is not None else None
+        overview = PlayerOverview(
+            player_name=player_name,
+            games_total=games_total,
+            games_found=games_found,
+            avg_cpl=avg,
+            accuracy=acc,
+            inaccuracy=agg_inacc,
+            mistake=agg_mis,
+            blunder=agg_blun,
+        )
+
     return AnalyzeReport(
         games=games,
         engine_path=engine_path,
         time_per_move=time_per_move,
         max_plies=max_plies,
         player_name=player_name,
+        player_overview=overview,
     )

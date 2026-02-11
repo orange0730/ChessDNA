@@ -2,6 +2,7 @@ import os
 import tempfile
 from pathlib import Path
 
+import anyio
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -52,7 +53,10 @@ async def analyze(
     pgn_text = (await pgn.read()).decode("utf-8", errors="replace")
 
     try:
-        report = analyze_pgn_text(
+        # Run CPU/IO-heavy engine analysis in a worker thread to avoid
+        # asyncio event-loop/subprocess quirks on Windows.
+        report = await anyio.to_thread.run_sync(
+            analyze_pgn_text,
             pgn_text,
             engine_path=engine_path,
             time_per_move=time_per_move,

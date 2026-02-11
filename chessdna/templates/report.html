@@ -91,6 +91,7 @@
   {% endif %}
 
   {% for g in report.games %}
+    {% set game_index = loop.index %}
     <hr/>
     <h2>
       Game {{ loop.index }}
@@ -105,7 +106,7 @@
         {% for ply in g.turning_points %}
           {% set p = g.plies[ply-1] %}
           <div style="margin:4px 0;">
-            <a href="#" onclick="jumpToPly({{ loop.parentloop.index }}, {{ ply }}); return false;">#{{ ply }}</a>
+            <a href="#" onclick="jumpToPly({{ game_index }}, {{ ply }}); return false;">#{{ ply }}</a>
             <code>{{ p.san }}</code>
             — CPL {{ p.cpl }}
             | best: <code>{{ p.bestmove_uci }}</code>

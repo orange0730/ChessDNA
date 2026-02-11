@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 
 import anyio
+from functools import partial
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -55,13 +56,14 @@ async def analyze(
     try:
         # Run CPU/IO-heavy engine analysis in a worker thread to avoid
         # asyncio event-loop/subprocess quirks on Windows.
-        report = await anyio.to_thread.run_sync(
+        fn = partial(
             analyze_pgn_text,
             pgn_text,
             engine_path=engine_path,
             time_per_move=time_per_move,
             max_plies=max_plies,
         )
+        report = await anyio.to_thread.run_sync(fn)
 
         # Also write a copy to a temp file (useful for debugging/demo)
         with tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w", encoding="utf-8") as f:

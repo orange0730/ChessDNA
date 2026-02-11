@@ -5,14 +5,70 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ChessDNA</title>
   <style>
-    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;max-width:900px;margin:24px auto;padding:0 16px;}
+    :root{
+      --bg:#0b0f19;
+      --card:#111827;
+      --card2:#0f172a;
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --line:rgba(255,255,255,.08);
+      --accent:#60a5fa;
+      --accent2:#22c55e;
+    }
+    *{box-sizing:border-box;}
+    body{
+      font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;
+      margin:0;
+      background: radial-gradient(1000px 600px at 20% 0%, rgba(96,165,250,.18), transparent 60%),
+                  radial-gradient(800px 500px at 90% 10%, rgba(34,197,94,.12), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+    }
+    .wrap{max-width:980px;margin:28px auto;padding:0 16px;}
+    .header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px;}
+    .brand h1{margin:0;font-size:28px;letter-spacing:.2px;}
+    .brand p{margin:6px 0 0;color:var(--muted);font-size:13px;}
+    .pill{border:1px solid var(--line);padding:6px 10px;border-radius:999px;color:var(--muted);font-size:12px;background:rgba(255,255,255,.03)}
+
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+    .cardHead{padding:14px 16px;border-bottom:1px solid var(--line);background:rgba(17,24,39,.55)}
+    .cardHead strong{font-size:14px;}
+    .cardBody{padding:16px;}
+
     input,button,textarea{font-size:14px;}
+    input,textarea{
+      width:100%;
+      background:rgba(15,23,42,.65);
+      color:var(--text);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 12px;
+      outline:none;
+    }
+    input:focus,textarea:focus{border-color:rgba(96,165,250,.55);box-shadow:0 0 0 3px rgba(96,165,250,.15)}
     textarea{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;}
-    .row{margin:12px 0;}
-    label{display:block;margin-bottom:6px;font-weight:600;}
-    .hint{color:#666;font-size:12px;}
-    .btn{padding:10px 14px;border:0;border-radius:10px;background:#111;color:#fff;cursor:pointer;}
+
+    .grid{display:grid;grid-template-columns:1fr;gap:14px;}
+    @media (min-width:900px){
+      .grid{grid-template-columns: 1.2fr .8fr;align-items:start;}
+    }
+    .row{margin:0;}
+    label{display:block;margin:0 0 8px;font-weight:650;font-size:13px;color:#f3f4f6;}
+    .hint{color:var(--muted);font-size:12px;margin-top:6px;line-height:1.4}
+
+    .btnRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center;}
+    .btn{
+      padding:10px 14px;border:1px solid rgba(255,255,255,.10);
+      border-radius:12px;background:rgba(96,165,250,.16);
+      color:var(--text);cursor:pointer;
+    }
+    .btn:hover{background:rgba(96,165,250,.22)}
+    .btnPrimary{background:linear-gradient(135deg, rgba(96,165,250,.35), rgba(96,165,250,.18));border-color:rgba(96,165,250,.35)}
+    .btnPrimary:hover{background:linear-gradient(135deg, rgba(96,165,250,.42), rgba(96,165,250,.20))}
     .btn:disabled{opacity:.6;cursor:not-allowed;}
+
+    .small{font-size:12px;color:var(--muted)}
+    .divider{height:1px;background:var(--line);margin:14px 0;}
   </style>
   <script>
     function onSubmit(){
@@ -24,45 +80,74 @@
   </script>
 </head>
 <body>
-  <h1>ChessDNA</h1>
-  <p class="hint">丟 PGN 進來，ChessDNA 會用 Stockfish 算每步 CPL / accuracy，產出報告（MVP）。</p>
-
-  <form action="/analyze" method="post" enctype="multipart/form-data" onsubmit="return onSubmit();">
-    <div class="row">
-      <label>玩家名稱（PGN 的 White/Black）</label>
-      <input type="text" name="player_name" style="width:100%" placeholder="例如：orange0730" />
-      <div class="hint">用來產生「這個人的」統計與風格摘要（若留空就先顯示雙方）。</div>
+  <div class="wrap">
+    <div class="header">
+      <div class="brand">
+        <h1>ChessDNA</h1>
+        <p>丟 PGN 進來，ChessDNA 會用 Stockfish 算每步 CPL / accuracy，產出報告（MVP）。</p>
+      </div>
+      <div class="pill">Tip: time_per_move 越大越準但越慢</div>
     </div>
 
-    <div class="row">
-      <label>PGN 上傳（檔案）</label>
-      <input type="file" name="pgn" accept=".pgn,.txt" />
-      <div class="hint">或改用下面的「貼上 PGN 文字」也可以。</div>
-    </div>
+    <form class="card" action="/analyze" method="post" enctype="multipart/form-data" onsubmit="return onSubmit();">
+      <div class="cardHead"><strong>Analyze PGN</strong> <span class="small">（檔案或貼上文字二選一即可）</span></div>
+      <div class="cardBody">
+        <div class="grid">
+          <div>
+            <div class="row">
+              <label>玩家名稱（PGN 的 White/Black）</label>
+              <input type="text" name="player_name" placeholder="例如：orange0730" />
+              <div class="hint">用來產生「這個人的」統計與摘要（留空就先顯示雙方）。</div>
+            </div>
 
-    <div class="row">
-      <label>PGN（貼上文字）</label>
-      <textarea name="pgn_text" rows="10" style="width:100%" placeholder="貼上 PGN 內容…"></textarea>
-    </div>
+            <div class="row">
+              <label>PGN 上傳（檔案）</label>
+              <input type="file" name="pgn" accept=".pgn,.txt" />
+              <div class="hint">如果你貼了下方 PGN 文字，會優先使用貼上的內容。</div>
+            </div>
 
-    <div class="row">
-      <label>Stockfish 路徑</label>
-      <input type="text" name="engine_path" style="width:100%" value="{{ default_engine }}" />
-      <div class="hint">可用環境變數 STOCKFISH_PATH 覆蓋預設。</div>
-    </div>
+            <div class="row">
+              <label>PGN（貼上文字）</label>
+              <textarea name="pgn_text" rows="10" placeholder="貼上 PGN 內容…"></textarea>
+            </div>
+          </div>
 
-    <div class="row">
-      <label>每步分析時間（秒）</label>
-      <input type="number" name="time_per_move" step="0.01" min="0.01" value="{{ default_time }}" />
-      <div class="hint">越大越準但越慢。先用 0.05～0.1 秒 demo 就夠。</div>
-    </div>
+          <div>
+            <div class="card" style="background:rgba(17,24,39,.35);">
+              <div class="cardHead" style="background:rgba(15,23,42,.35)"><strong>Settings</strong></div>
+              <div class="cardBody">
+                <div class="row">
+                  <label>Stockfish 路徑</label>
+                  <input type="text" name="engine_path" value="{{ default_engine }}" />
+                  <div class="hint">可用環境變數 <code>STOCKFISH_PATH</code> 覆蓋預設。</div>
+                </div>
 
-    <div class="row">
-      <label>最多分析 plies</label>
-      <input type="number" name="max_plies" step="1" min="10" value="200" />
-    </div>
+                <div class="row">
+                  <label>每步分析時間（秒）</label>
+                  <input type="number" name="time_per_move" step="0.01" min="0.01" value="{{ default_time }}" />
+                  <div class="hint">建議：0.05～0.10 秒先看結果；要更準再拉高。</div>
+                </div>
 
-    <button id="submitBtn" class="btn" type="submit">開始分析</button>
-  </form>
+                <div class="row">
+                  <label>最多分析 plies</label>
+                  <input type="number" name="max_plies" step="1" min="10" value="200" />
+                  <div class="hint">避免太大導致等待過久。</div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="btnRow">
+                  <button id="submitBtn" class="btn btnPrimary" type="submit">開始分析</button>
+                  <span class="small">分析會花一點時間（取決於 plies × time_per_move）。</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <p class="small" style="margin-top:12px;">本頁是 MVP：之後會加入 turning points 深度解釋、風格特徵與多盤總覽。</p>
+  </div>
 </body>
 </html>

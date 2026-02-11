@@ -94,11 +94,16 @@ def analyze_pgn_text(
                 san = board.san(move)
                 uci = move.uci()
 
-                # Evaluate after played move; engine score is then from opponent-to-move.
+                # Played-move eval in the SAME position (avoid perspective flip issues)
+                played_cp, _ = engine.eval_position(
+                    moves_so_far,
+                    movetime_ms=movetime_ms,
+                    searchmoves=[uci],
+                )
+
+                # Now advance the game state
                 board.push(move)
                 moves_so_far.append(uci)
-                played_cp_next, _ = engine.eval_position(moves_so_far, movetime_ms=movetime_ms)
-                played_cp = -played_cp_next
 
                 cpl = max(0, best_cp - played_cp)
                 acc = _lichess_accuracy_from_cpl(cpl)

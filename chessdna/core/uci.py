@@ -76,15 +76,28 @@ class UciEngine:
         except Exception:
             pass
 
-    def eval_position(self, moves_uci: list[str], *, movetime_ms: int) -> tuple[int, str]:
-        """Return (score_cp_from_side_to_move, bestmove_uci)."""
+    def eval_position(
+        self,
+        moves_uci: list[str],
+        *,
+        movetime_ms: int,
+        searchmoves: list[str] | None = None,
+    ) -> tuple[int, str]:
+        """Return (score_cp_from_side_to_move, bestmove_uci).
+
+        If searchmoves is provided, restrict the search to those moves.
+        This is useful to evaluate a specific played move in the *same* position.
+        """
         # Use startpos to keep it simple for standard chess.
         if moves_uci:
             self._send("position startpos moves " + " ".join(moves_uci))
         else:
             self._send("position startpos")
 
-        self._send(f"go movetime {movetime_ms}")
+        if searchmoves:
+            self._send(f"go movetime {movetime_ms} searchmoves " + " ".join(searchmoves))
+        else:
+            self._send(f"go movetime {movetime_ms}")
 
         last_score: UciScore | None = None
         bestmove = "0000"

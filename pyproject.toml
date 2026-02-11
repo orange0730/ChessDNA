@@ -1,0 +1,18 @@
+[project]
+name = "chessdna"
+version = "0.1.0"
+description = "PGN accuracy analysis + style modeling + imitation"
+requires-python = ">=3.11"
+dependencies = [
+  "python-chess>=1.11.0",
+  "requests>=2.31.0",
+  "pydantic>=2.6.0",
+  "rich>=13.0.0",
+]
+
+[project.scripts]
+chessdna = "chessdna.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

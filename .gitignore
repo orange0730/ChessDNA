@@ -12,6 +12,7 @@ venv/
 dist/
 build/
 
-# reports
+# reports / samples
 *.json
 *.html
+_sample_*.pgn

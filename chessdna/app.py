@@ -1,7 +1,9 @@
 import os
+import sys
 import tempfile
 from pathlib import Path
 
+import asyncio
 import anyio
 from functools import partial
 from fastapi import FastAPI, File, Form, UploadFile
@@ -11,6 +13,14 @@ from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
 from .core.analyze import analyze_pgn_text
+
+
+# Ensure subprocess support in engine analysis (python-chess uses asyncio internally).
+if sys.platform == "win32":
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    except Exception:
+        pass
 
 
 def default_stockfish_path() -> str:

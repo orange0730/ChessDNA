@@ -47,6 +47,22 @@
         r.style.display = show ? '' : 'none';
       });
     }
+
+    function jumpToPly(gameIndex, ply){
+      const root=document.getElementById('game-'+gameIndex);
+      if(!root) return;
+      const row = root.querySelector('tr[data-ply="' + ply + '"]');
+      if(!row) return;
+
+      // make sure row isn't hidden by filters
+      row.style.display = '';
+
+      row.scrollIntoView({behavior:'smooth', block:'center'});
+      row.style.transition = 'background-color 0.2s ease';
+      const prev = row.style.backgroundColor;
+      row.style.backgroundColor = 'rgba(96,165,250,.22)';
+      setTimeout(()=>{ row.style.backgroundColor = prev; }, 900);
+    }
   </script>
 </head>
 <body>
@@ -89,7 +105,8 @@
         {% for ply in g.turning_points %}
           {% set p = g.plies[ply-1] %}
           <div style="margin:4px 0;">
-            #{{ ply }} <code>{{ p.san }}</code>
+            <a href="#" onclick="jumpToPly({{ loop.parent.index }}, {{ ply }}); return false;">#{{ ply }}</a>
+            <code>{{ p.san }}</code>
             — CPL {{ p.cpl }}
             | best: <code>{{ p.bestmove_uci }}</code>
             {% if p.pv_uci and p.pv_uci|length>0 %}

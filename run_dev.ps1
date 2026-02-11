@@ -5,6 +5,6 @@ if([string]::IsNullOrWhiteSpace($env:STOCKFISH_PATH)){
 }
 
 Write-Host "[ChessDNA] STOCKFISH_PATH=$env:STOCKFISH_PATH"
-Write-Host "[ChessDNA] http://127.0.0.1:8000"
+Write-Host "[ChessDNA] http://127.0.0.1:8004"
 
-uvicorn chessdna.app:app --reload --host 127.0.0.1 --port 8000
+uvicorn chessdna.app:app --reload --host 127.0.0.1 --port 8004

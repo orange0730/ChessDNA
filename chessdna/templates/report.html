@@ -37,6 +37,10 @@
       {% endif %}
     </h2>
 
+    {% if g.turning_points and g.turning_points|length > 0 %}
+      <p><strong>Turning points (top CPL plies)</strong>: {{ g.turning_points | join(', ') }}</p>
+    {% endif %}
+
     <p>
       Avg CPL (W): {{ '%.1f' % g.avg_cpl_white if g.avg_cpl_white is not none else 'n/a' }}
       | Accuracy (W): {{ '%.1f' % g.accuracy_white if g.accuracy_white is not none else 'n/a' }}<br/>
@@ -45,10 +49,19 @@
     </p>
 
     {% if report.player_name %}
-      <p>
-        <strong>{{ report.player_name }}</strong> — Avg CPL: {{ '%.1f' % g.player_avg_cpl if g.player_avg_cpl is not none else 'n/a' }}
-        | Accuracy: {{ '%.1f' % g.player_accuracy if g.player_accuracy is not none else 'n/a' }}
-      </p>
+      <div style="border:1px solid #eee;border-radius:12px;padding:12px;margin:10px 0;">
+        <div style="font-weight:700;">{{ report.player_name }}（{{ g.player_side if g.player_side else 'not found in headers' }}）</div>
+        <div>
+          Avg CPL: {{ '%.1f' % g.player_avg_cpl if g.player_avg_cpl is not none else 'n/a' }}
+          | Accuracy: {{ '%.1f' % g.player_accuracy if g.player_accuracy is not none else 'n/a' }}
+        </div>
+        <div>
+          Inaccuracy: {{ g.player_inaccuracy }} | Mistake: {{ g.player_mistake }} | Blunder: {{ g.player_blunder }}
+        </div>
+        {% if g.player_worst and g.player_worst|length > 0 %}
+          <div>Worst plies: {{ g.player_worst | join(', ') }}</div>
+        {% endif %}
+      </div>
     {% endif %}
 
     <table>

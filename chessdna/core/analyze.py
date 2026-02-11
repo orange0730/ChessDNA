@@ -33,10 +33,18 @@ class GameReport(BaseModel):
     accuracy_white: float | None = None
     accuracy_black: float | None = None
 
+    # Turning points: biggest CPL moves in this game (by ply index)
+    turning_points: list[int] = Field(default_factory=list)
+
     # If player_name specified, compute per-game stats for that player only.
     player_side: Literal["white", "black"] | None = None
     player_avg_cpl: float | None = None
     player_accuracy: float | None = None
+
+    player_inaccuracy: int = 0
+    player_mistake: int = 0
+    player_blunder: int = 0
+    player_worst: list[int] = Field(default_factory=list)  # ply numbers
 
 
 class AnalyzeReport(BaseModel):
@@ -140,12 +148,23 @@ def analyze_pgn_text(
             acc_w = _lichess_accuracy_from_cpl(avg_w) if avg_w is not None else None
             acc_b = _lichess_accuracy_from_cpl(avg_b) if avg_b is not None else None
 
+            # Turning points: top 5 CPL moves (any side)
+            tp = sorted(
+                [p for p in plies if p.cpl is not None],
+                key=lambda x: x.cpl,
+                reverse=True,
+            )[:5]
+            turning_points = [p.ply for p in tp if (p.cpl or 0) > 0]
+
             headers = dict(game.headers)
 
             # Player-specific stats (optional)
             p_side = None
             p_avg = None
             p_acc = None
+            p_inacc = p_mis = p_blun = 0
+            p_worst: list[int] = []
+
             if player_name:
                 w = headers.get("White")
                 b = headers.get("Black")
@@ -155,9 +174,16 @@ def analyze_pgn_text(
                     p_side = "black"
 
                 if p_side:
-                    p_cpls = [p.cpl for p in plies if p.side == p_side and p.cpl is not None]
+                    p_plies = [p for p in plies if p.side == p_side and p.cpl is not None]
+                    p_cpls = [p.cpl for p in p_plies if p.cpl is not None]
                     p_avg = sum(p_cpls) / len(p_cpls) if p_cpls else None
                     p_acc = _lichess_accuracy_from_cpl(p_avg) if p_avg is not None else None
+
+                    p_inacc = sum(1 for p in p_plies if p.label == "inaccuracy")
+                    p_mis = sum(1 for p in p_plies if p.label == "mistake")
+                    p_blun = sum(1 for p in p_plies if p.label == "blunder")
+
+                    p_worst = [p.ply for p in sorted(p_plies, key=lambda x: x.cpl, reverse=True)[:5] if (p.cpl or 0) > 0]
 
             games.append(
                 GameReport(
@@ -167,9 +193,14 @@ def analyze_pgn_text(
                     avg_cpl_black=avg_b,
                     accuracy_white=acc_w,
                     accuracy_black=acc_b,
+                    turning_points=turning_points,
                     player_side=p_side,
                     player_avg_cpl=p_avg,
                     player_accuracy=p_acc,
+                    player_inaccuracy=p_inacc,
+                    player_mistake=p_mis,
+                    player_blunder=p_blun,
+                    player_worst=p_worst,
                 )
             )
 

@@ -51,19 +51,33 @@ async def analyze(
 ):
     pgn_text = (await pgn.read()).decode("utf-8", errors="replace")
 
-    report = analyze_pgn_text(
-        pgn_text,
-        engine_path=engine_path,
-        time_per_move=time_per_move,
-        max_plies=max_plies,
-    )
+    try:
+        report = analyze_pgn_text(
+            pgn_text,
+            engine_path=engine_path,
+            time_per_move=time_per_move,
+            max_plies=max_plies,
+        )
 
-    # Also write a copy to a temp file (useful for debugging/demo)
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w", encoding="utf-8") as f:
-        f.write(report.model_dump_json(indent=2))
-        debug_path = f.name
+        # Also write a copy to a temp file (useful for debugging/demo)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w", encoding="utf-8") as f:
+            f.write(report.model_dump_json(indent=2))
+            debug_path = f.name
 
-    return TEMPLATES.TemplateResponse(
-        "report.html",
-        {"request": request, "report": report, "debug_path": debug_path},
-    )
+        return TEMPLATES.TemplateResponse(
+            "report.html",
+            {"request": request, "report": report, "debug_path": debug_path},
+        )
+
+    except Exception as e:
+        # Show a friendly error page instead of a raw 500.
+        return TEMPLATES.TemplateResponse(
+            "error.html",
+            {
+                "request": request,
+                "error": repr(e),
+                "engine_path": engine_path,
+                "hint": "常見原因：Stockfish 路徑錯誤 / PGN 內容格式異常 / 檔案不是 UTF-8。",
+            },
+            status_code=500,
+        )

@@ -10,6 +10,8 @@ import chess.engine
 import chess.pgn
 from pydantic import BaseModel, Field
 
+from .uci import UciEngine
+
 
 class PlyReport(BaseModel):
     ply: int
@@ -78,7 +80,7 @@ def analyze_pgn_text(
 
     games: list[GameReport] = []
 
-    engine = chess.engine.SimpleEngine.popen_uci(engine_path)
+    engine = UciEngine(engine_path)
     try:
         while True:
             game = chess.pgn.read_game(pgn_io)
@@ -87,26 +89,30 @@ def analyze_pgn_text(
 
             board = game.board()
             plies: list[PlyReport] = []
+            moves_so_far: list[str] = []
 
-            node = game
             ply_idx = 0
             for move in game.mainline_moves():
                 if ply_idx >= max_plies:
                     break
 
                 side = "white" if board.turn == chess.WHITE else "black"
-                pov = chess.WHITE if board.turn == chess.WHITE else chess.BLACK
 
-                # Best evaluation at root position (from side-to-move perspective)
-                info_best = engine.analyse(board, chess.engine.Limit(time=time_per_move))
-                best_cp = _score_to_cp(info_best["score"].pov(pov))
+                movetime_ms = max(10, int(time_per_move * 1000))
 
-                # Played move eval: evaluate after making the move, but still from the player perspective
+                # Best evaluation at current position (from side-to-move perspective)
+                best_cp, _bestmove = engine.eval_position(moves_so_far, movetime_ms=movetime_ms)
+
                 san = board.san(move)
                 uci = move.uci()
+
+                # Evaluate after played move, but from the same player's perspective
                 board.push(move)
-                info_played = engine.analyse(board, chess.engine.Limit(time=time_per_move))
-                played_cp = _score_to_cp(info_played["score"].pov(pov))
+                moves_so_far.append(uci)
+                played_cp_next, _ = engine.eval_position(moves_so_far, movetime_ms=movetime_ms)
+
+                # Convert played score to "player perspective at decision time": after move it's opponent to move.
+                played_cp = -played_cp_next
 
                 cpl = max(0, best_cp - played_cp)
                 acc = _lichess_accuracy_from_cpl(cpl)

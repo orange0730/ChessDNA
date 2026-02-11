@@ -22,6 +22,9 @@
   <p>
     Engine: <code>{{ report.engine_path }}</code><br/>
     time_per_move: {{ report.time_per_move }}s, max_plies: {{ report.max_plies }}<br/>
+    {% if report.player_name %}
+      player: <code>{{ report.player_name }}</code><br/>
+    {% endif %}
     debug json: <code>{{ debug_path }}</code>
   </p>
 
@@ -40,6 +43,13 @@
       Avg CPL (B): {{ '%.1f' % g.avg_cpl_black if g.avg_cpl_black is not none else 'n/a' }}
       | Accuracy (B): {{ '%.1f' % g.accuracy_black if g.accuracy_black is not none else 'n/a' }}
     </p>
+
+    {% if report.player_name %}
+      <p>
+        <strong>{{ report.player_name }}</strong> — Avg CPL: {{ '%.1f' % g.player_avg_cpl if g.player_avg_cpl is not none else 'n/a' }}
+        | Accuracy: {{ '%.1f' % g.player_accuracy if g.player_accuracy is not none else 'n/a' }}
+      </p>
+    {% endif %}
 
     <table>
       <thead>

@@ -33,12 +33,18 @@ class GameReport(BaseModel):
     accuracy_white: float | None = None
     accuracy_black: float | None = None
 
+    # If player_name specified, compute per-game stats for that player only.
+    player_side: Literal["white", "black"] | None = None
+    player_avg_cpl: float | None = None
+    player_accuracy: float | None = None
+
 
 class AnalyzeReport(BaseModel):
     games: list[GameReport]
     engine_path: str
     time_per_move: float
     max_plies: int
+    player_name: str | None = None
 
 
 def _cpl_label(cpl: int) -> str:
@@ -64,6 +70,7 @@ def analyze_pgn_text(
     engine_path: str,
     time_per_move: float = 0.05,
     max_plies: int = 200,
+    player_name: str | None = None,
 ) -> AnalyzeReport:
     pgn_io = StringIO(pgn_text)
 
@@ -133,14 +140,36 @@ def analyze_pgn_text(
             acc_w = _lichess_accuracy_from_cpl(avg_w) if avg_w is not None else None
             acc_b = _lichess_accuracy_from_cpl(avg_b) if avg_b is not None else None
 
+            headers = dict(game.headers)
+
+            # Player-specific stats (optional)
+            p_side = None
+            p_avg = None
+            p_acc = None
+            if player_name:
+                w = headers.get("White")
+                b = headers.get("Black")
+                if w == player_name:
+                    p_side = "white"
+                elif b == player_name:
+                    p_side = "black"
+
+                if p_side:
+                    p_cpls = [p.cpl for p in plies if p.side == p_side and p.cpl is not None]
+                    p_avg = sum(p_cpls) / len(p_cpls) if p_cpls else None
+                    p_acc = _lichess_accuracy_from_cpl(p_avg) if p_avg is not None else None
+
             games.append(
                 GameReport(
-                    headers=dict(game.headers),
+                    headers=headers,
                     plies=plies,
                     avg_cpl_white=avg_w,
                     avg_cpl_black=avg_b,
                     accuracy_white=acc_w,
                     accuracy_black=acc_b,
+                    player_side=p_side,
+                    player_avg_cpl=p_avg,
+                    player_accuracy=p_acc,
                 )
             )
 
@@ -152,4 +181,5 @@ def analyze_pgn_text(
         engine_path=engine_path,
         time_per_move=time_per_move,
         max_plies=max_plies,
+        player_name=player_name,
     )

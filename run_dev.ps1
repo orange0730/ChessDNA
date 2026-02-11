@@ -5,6 +5,19 @@ if([string]::IsNullOrWhiteSpace($env:STOCKFISH_PATH)){
 }
 
 Write-Host "[ChessDNA] STOCKFISH_PATH=$env:STOCKFISH_PATH"
-Write-Host "[ChessDNA] http://127.0.0.1:8004"
+function Test-PortFree([int]$port){
+  try{
+    $c = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+    return -not $c
+  } catch {
+    # fallback if cmdlet not available
+    return $true
+  }
+}
 
-uvicorn chessdna.app:app --reload --host 127.0.0.1 --port 8004
+$port = 8004
+while($port -lt 8015 -and -not (Test-PortFree $port)) { $port++ }
+
+Write-Host "[ChessDNA] http://127.0.0.1:$port"
+
+uvicorn chessdna.app:app --reload --host 127.0.0.1 --port $port

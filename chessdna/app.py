@@ -56,22 +56,42 @@ def index(request: Request):
 @app.post("/analyze", response_class=HTMLResponse)
 async def analyze(
     request: Request,
-    pgn: UploadFile = File(...),
+    pgn: UploadFile | None = File(None),
+    pgn_text: str = Form(""),
+    player_name: str = Form(""),
     engine_path: str = Form(default_stockfish_path()),
     time_per_move: float = Form(0.05),
     max_plies: int = Form(200),
 ):
-    pgn_text = (await pgn.read()).decode("utf-8", errors="replace")
+    # Prefer pasted text, fallback to uploaded file
+    src = (pgn_text or "").strip()
+    if not src and pgn is not None:
+        src = (await pgn.read()).decode("utf-8", errors="replace").strip()
+    if not src:
+        return TEMPLATES.TemplateResponse(
+            "error.html",
+            {
+                "request": request,
+                "error": "ValueError('Missing PGN: please upload a file or paste PGN text')",
+                "trace": "",
+                "engine_path": engine_path,
+                "hint": "請上傳 PGN 檔或貼上 PGN 文字。",
+            },
+            status_code=400,
+        )
+
+    player_name = player_name.strip() or None
 
     try:
         # Run CPU/IO-heavy engine analysis in a worker thread to avoid
         # asyncio event-loop/subprocess quirks on Windows.
         fn = partial(
             analyze_pgn_text,
-            pgn_text,
+            src,
             engine_path=engine_path,
             time_per_move=time_per_move,
             max_plies=max_plies,
+            player_name=player_name,
         )
         report = await anyio.to_thread.run_sync(fn)
 

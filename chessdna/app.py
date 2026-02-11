@@ -2,17 +2,20 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+import uuid
 
 import asyncio
 import anyio
 from functools import partial
-from fastapi import FastAPI, File, Form, UploadFile
+
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
 from .core.analyze import analyze_pgn_text
+from .routes_downloads import download_file
 
 
 # Ensure subprocess support in engine analysis (python-chess uses asyncio internally).
@@ -36,6 +39,11 @@ app = FastAPI(title="ChessDNA", version="0.1.0")
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+# In-memory report store (MVP). Maps report_id -> {json_path, html_path}
+REPORT_STORE: dict[str, dict[str, str]] = {}
+REPORT_TMP_DIR = Path(tempfile.gettempdir()) / "chessdna_reports"
+REPORT_TMP_DIR.mkdir(exist_ok=True)
+
 static_dir = BASE_DIR / "static"
 static_dir.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
@@ -51,6 +59,13 @@ def index(request: Request):
             "default_time": 0.05,
         },
     )
+
+
+@app.get("/download/{report_id}/{kind}")
+def download(report_id: str, kind: str):
+    if kind not in ("json", "html"):
+        raise HTTPException(status_code=400, detail="kind must be json or html")
+    return download_file(REPORT_STORE, report_id, kind)
 
 
 @app.post("/analyze", response_class=HTMLResponse)
@@ -113,14 +128,23 @@ async def analyze(
         )
         report = await anyio.to_thread.run_sync(fn)
 
-        # Also write a copy to a temp file (useful for debugging/demo)
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w", encoding="utf-8") as f:
-            f.write(report.model_dump_json(indent=2))
-            debug_path = f.name
+        # Write report artifacts to temp and expose download links.
+        report_id = uuid.uuid4().hex
+        json_path = str(REPORT_TMP_DIR / f"{report_id}.json")
+        html_path = str(REPORT_TMP_DIR / f"{report_id}.html")
+
+        Path(json_path).write_text(report.model_dump_json(indent=2), encoding="utf-8")
+
+        # Render HTML to string for download
+        tpl = TEMPLATES.get_template("report.html")
+        html = tpl.render({"request": request, "report": report, "debug_path": json_path, "report_id": report_id})
+        Path(html_path).write_text(html, encoding="utf-8")
+
+        REPORT_STORE[report_id] = {"json": json_path, "html": html_path}
 
         return TEMPLATES.TemplateResponse(
             "report.html",
-            {"request": request, "report": report, "debug_path": debug_path},
+            {"request": request, "report": report, "debug_path": json_path, "report_id": report_id},
         )
 
     except Exception as e:

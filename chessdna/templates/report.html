@@ -114,6 +114,7 @@
     <div class="card" style="margin-bottom:14px;">
       <div class="cardHead">Run info</div>
       <div class="cardBody">
+        {% include "_download_buttons.html" %}
         <div class="kv">
           <div class="muted">Engine</div><div><code>{{ report.engine_path }}</code></div>
           <div class="muted">time_per_move</div><div>{{ report.time_per_move }}s</div>

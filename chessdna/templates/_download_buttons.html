@@ -1,0 +1,6 @@
+{% if report_id %}
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 0;">
+    <a class="chip" href="/download/{{ report_id }}/json" title="Download JSON report">Download JSON</a>
+    <a class="chip" href="/download/{{ report_id }}/html" title="Download HTML report">Download HTML</a>
+  </div>
+{% endif %}

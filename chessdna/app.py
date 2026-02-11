@@ -58,24 +58,42 @@ async def analyze(
     request: Request,
     pgn: UploadFile | None = File(None),
     pgn_text: str = Form(""),
+    lichess_user: str = Form(""),
+    chesscom_user: str = Form(""),
+    fetch_max: int = Form(10),
     player_name: str = Form(""),
     engine_path: str = Form(default_stockfish_path()),
     time_per_move: float = Form(0.05),
     max_plies: int = Form(200),
 ):
-    # Prefer pasted text, fallback to uploaded file
+    # Prefer pasted text, then online fetch, then uploaded file
     src = (pgn_text or "").strip()
+
+    lichess_user = (lichess_user or "").strip()
+    chesscom_user = (chesscom_user or "").strip()
+
+    if not src and lichess_user:
+        from .core.lichess import fetch_user_games_pgn as fetch_lichess
+
+        src = fetch_lichess(lichess_user, max_games=fetch_max).strip()
+
+    if not src and chesscom_user:
+        from .core.chesscom import fetch_user_games_pgn as fetch_chesscom
+
+        src = fetch_chesscom(chesscom_user, max_games=fetch_max).strip()
+
     if not src and pgn is not None:
         src = (await pgn.read()).decode("utf-8", errors="replace").strip()
+
     if not src:
         return TEMPLATES.TemplateResponse(
             "error.html",
             {
                 "request": request,
-                "error": "ValueError('Missing PGN: please upload a file or paste PGN text')",
+                "error": "ValueError('Missing PGN: please upload a file / paste PGN / or provide online username')",
                 "trace": "",
                 "engine_path": engine_path,
-                "hint": "請上傳 PGN 檔或貼上 PGN 文字。",
+                "hint": "請上傳 PGN 檔、貼上 PGN 文字，或輸入 Lichess/Chess.com username。",
             },
             status_code=400,
         )

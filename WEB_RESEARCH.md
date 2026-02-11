@@ -31,3 +31,11 @@
 - Cloudflare official: Registrar (no markup)
   - https://www.cloudflare.com/products/registrar/
 
+### Chess.com Published Data API (PubAPI)
+- Source: https://www.chess.com/news/view/published-data-api
+- Notes:
+  - Read-only public data API (JSON), cannot send moves/commands.
+  - Game archives discovery endpoint: `https://api.chess.com/pub/player/{username}/games/archives`
+  - Monthly archives endpoint returns JSON with `games` list; each game object may include a `pgn` field.
+  - Rate limiting: serial requests generally OK; parallel requests may return 429.
+

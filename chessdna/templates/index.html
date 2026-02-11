@@ -81,11 +81,15 @@
     function onSubmit(){
       const file = document.querySelector('input[name="pgn"]');
       const text = document.querySelector('textarea[name="pgn_text"]');
+      const lich = document.querySelector('input[name="lichess_user"]');
+      const ccom = document.querySelector('input[name="chesscom_user"]');
+
       const hasFile = file && file.files && file.files.length > 0;
       const hasText = text && text.value && text.value.trim().length > 0;
+      const hasOnline = (lich && lich.value.trim().length>0) || (ccom && ccom.value.trim().length>0);
 
-      if(!hasFile && !hasText){
-        showInlineError('請上傳 PGN 檔或貼上 PGN 文字後再送出。');
+      if(!hasFile && !hasText && !hasOnline){
+        showInlineError('請上傳 PGN 檔、貼上 PGN 文字，或輸入 Lichess/Chess.com username 後再送出。');
         return false;
       }
 
@@ -108,7 +112,7 @@
     </div>
 
     <form class="card" action="/analyze" method="post" enctype="multipart/form-data" onsubmit="return onSubmit();">
-      <div class="cardHead"><strong>Analyze PGN</strong> <span class="small">（檔案或貼上文字二選一即可）</span></div>
+      <div class="cardHead"><strong>Analyze PGN</strong> <span class="small">（檔案 / 貼上 / 線上抓取 擇一）</span></div>
       <div class="cardBody">
         <div id="inlineErr" style="display:none;margin:0 0 12px;padding:10px 12px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.10);border-radius:12px;color:#fecaca;"></div>
         <div class="grid">
@@ -118,6 +122,19 @@
               <input type="text" name="player_name" placeholder="例如：orange0730" />
               <div class="hint">用來產生「這個人的」統計與摘要（留空就先顯示雙方）。</div>
             </div>
+
+            <div class="row">
+              <label>線上抓棋譜（可選）</label>
+              <div class="hint">先支援 Lichess / Chess.com：輸入 username 後抓最近 N 盤並分析。</div>
+              <div style="display:grid;grid-template-columns:1fr;gap:10px;">
+                <input type="text" name="lichess_user" placeholder="Lichess username（例如 orange_bot）" />
+                <input type="text" name="chesscom_user" placeholder="Chess.com username（例如 hikaru）" />
+                <input type="number" name="fetch_max" step="1" min="1" value="10" />
+              </div>
+              <div class="hint">同時填兩個時，會優先用 Lichess。</div>
+            </div>
+
+            <div class="divider"></div>
 
             <div class="row">
               <label>PGN 上傳（檔案）</label>

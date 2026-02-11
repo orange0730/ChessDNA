@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ChessDNA</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;max-width:900px;margin:24px auto;padding:0 16px;}
+    input,button{font-size:14px;}
+    .row{margin:10px 0;}
+    label{display:block;margin-bottom:6px;font-weight:600;}
+    .hint{color:#666;font-size:12px;}
+  </style>
+</head>
+<body>
+  <h1>ChessDNA</h1>
+  <p class="hint">上傳 PGN，使用 Stockfish 分析每步 CPL / accuracy，產出報告（MVP）。</p>
+
+  <form action="/analyze" method="post" enctype="multipart/form-data">
+    <div class="row">
+      <label>PGN 檔案</label>
+      <input type="file" name="pgn" accept=".pgn,.txt" required />
+    </div>
+
+    <div class="row">
+      <label>Stockfish 路徑</label>
+      <input type="text" name="engine_path" style="width:100%" value="{{ default_engine }}" />
+      <div class="hint">可用環境變數 STOCKFISH_PATH 覆蓋預設。</div>
+    </div>
+
+    <div class="row">
+      <label>每步分析時間（秒）</label>
+      <input type="number" name="time_per_move" step="0.01" min="0.01" value="{{ default_time }}" />
+      <div class="hint">越大越準但越慢。先用 0.05～0.1 秒 demo 就夠。</div>
+    </div>
+
+    <div class="row">
+      <label>最多分析 plies</label>
+      <input type="number" name="max_plies" step="1" min="10" value="200" />
+    </div>
+
+    <button type="submit">開始分析</button>
+  </form>
+</body>
+</html>

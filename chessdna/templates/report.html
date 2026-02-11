@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ChessDNA Report</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;max-width:1100px;margin:24px auto;padding:0 16px;}
+    table{border-collapse:collapse;width:100%;}
+    th,td{border-bottom:1px solid #eee;padding:6px 8px;font-size:13px;}
+    th{text-align:left;position:sticky;top:0;background:#fff;}
+    .tag{padding:2px 6px;border-radius:10px;font-size:12px;display:inline-block;}
+    .ok{background:#e8f5e9;}
+    .inaccuracy{background:#fff8e1;}
+    .mistake{background:#ffe0b2;}
+    .blunder{background:#ffccbc;}
+    code{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;}
+  </style>
+</head>
+<body>
+  <h1>ChessDNA Report</h1>
+  <p>
+    Engine: <code>{{ report.engine_path }}</code><br/>
+    time_per_move: {{ report.time_per_move }}s, max_plies: {{ report.max_plies }}<br/>
+    debug json: <code>{{ debug_path }}</code>
+  </p>
+
+  {% for g in report.games %}
+    <hr/>
+    <h2>
+      Game {{ loop.index }}
+      {% if g.headers.get('White') and g.headers.get('Black') %}
+        — {{ g.headers.get('White') }} vs {{ g.headers.get('Black') }}
+      {% endif %}
+    </h2>
+
+    <p>
+      Avg CPL (W): {{ '%.1f' % g.avg_cpl_white if g.avg_cpl_white is not none else 'n/a' }}
+      | Accuracy (W): {{ '%.1f' % g.accuracy_white if g.accuracy_white is not none else 'n/a' }}<br/>
+      Avg CPL (B): {{ '%.1f' % g.avg_cpl_black if g.avg_cpl_black is not none else 'n/a' }}
+      | Accuracy (B): {{ '%.1f' % g.accuracy_black if g.accuracy_black is not none else 'n/a' }}
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Side</th>
+          <th>Move</th>
+          <th>Best (cp)</th>
+          <th>Played (cp)</th>
+          <th>CPL</th>
+          <th>Acc</th>
+          <th>Label</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in g.plies %}
+          <tr>
+            <td>{{ p.ply }}</td>
+            <td>{{ p.side }}</td>
+            <td><code>{{ p.san }}</code></td>
+            <td>{{ p.best_cp }}</td>
+            <td>{{ p.played_cp }}</td>
+            <td>{{ p.cpl }}</td>
+            <td>{{ '%.1f' % p.accuracy if p.accuracy is not none else '' }}</td>
+            <td><span class="tag {{ p.label }}">{{ p.label }}</span></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endfor %}
+
+  <p><a href="/">回首頁</a></p>
+</body>
+</html>

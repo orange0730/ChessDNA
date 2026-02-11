@@ -1,0 +1,69 @@
+import os
+import tempfile
+from pathlib import Path
+
+from fastapi import FastAPI, File, Form, UploadFile
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from starlette.requests import Request
+
+from .core.analyze import analyze_pgn_text
+
+
+def default_stockfish_path() -> str:
+    # Reasonable default for this machine; can be overridden by env var.
+    return os.environ.get(
+        "STOCKFISH_PATH",
+        r"D:\code\chess_train\stockfish\stockfish-windows-x86-64-avx2.exe",
+    )
+
+
+app = FastAPI(title="ChessDNA", version="0.1.0")
+
+BASE_DIR = Path(__file__).resolve().parent
+TEMPLATES = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+static_dir = BASE_DIR / "static"
+static_dir.mkdir(exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request):
+    return TEMPLATES.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "default_engine": default_stockfish_path(),
+            "default_time": 0.05,
+        },
+    )
+
+
+@app.post("/analyze", response_class=HTMLResponse)
+async def analyze(
+    request: Request,
+    pgn: UploadFile = File(...),
+    engine_path: str = Form(default_stockfish_path()),
+    time_per_move: float = Form(0.05),
+    max_plies: int = Form(200),
+):
+    pgn_text = (await pgn.read()).decode("utf-8", errors="replace")
+
+    report = analyze_pgn_text(
+        pgn_text,
+        engine_path=engine_path,
+        time_per_move=time_per_move,
+        max_plies=max_plies,
+    )
+
+    # Also write a copy to a temp file (useful for debugging/demo)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w", encoding="utf-8") as f:
+        f.write(report.model_dump_json(indent=2, ensure_ascii=False))
+        debug_path = f.name
+
+    return TEMPLATES.TemplateResponse(
+        "report.html",
+        {"request": request, "report": report, "debug_path": debug_path},
+    )

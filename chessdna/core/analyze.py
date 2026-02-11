@@ -1,0 +1,159 @@
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+from io import StringIO
+from typing import Any, Literal
+
+import chess
+import chess.engine
+import chess.pgn
+from pydantic import BaseModel, Field
+
+
+class PlyReport(BaseModel):
+    ply: int
+    san: str
+    uci: str
+    side: Literal["white", "black"]
+
+    best_cp: int | None = None
+    played_cp: int | None = None
+    cpl: int | None = None
+    accuracy: float | None = None
+    label: Literal["ok", "inaccuracy", "mistake", "blunder"] = "ok"
+
+
+class GameReport(BaseModel):
+    headers: dict[str, str] = Field(default_factory=dict)
+    plies: list[PlyReport]
+
+    avg_cpl_white: float | None = None
+    avg_cpl_black: float | None = None
+    accuracy_white: float | None = None
+    accuracy_black: float | None = None
+
+
+class AnalyzeReport(BaseModel):
+    games: list[GameReport]
+    engine_path: str
+    time_per_move: float
+    max_plies: int
+
+
+def _score_to_cp(score: chess.engine.PovScore, *, mate_score: int = 100000) -> int:
+    cp = score.score(mate_score=mate_score)
+    if cp is None:
+        # Should not happen if mate_score provided, but keep safe
+        return 0
+    return int(cp)
+
+
+def _cpl_label(cpl: int) -> str:
+    if cpl >= 300:
+        return "blunder"
+    if cpl >= 100:
+        return "mistake"
+    if cpl >= 50:
+        return "inaccuracy"
+    return "ok"
+
+
+def _lichess_accuracy_from_cpl(cpl: float) -> float:
+    # Commonly used approximation of Lichess accuracy mapping.
+    # Not official API, but good for a human-friendly score.
+    # accuracy = 103.1668 * exp(-0.04354*cpl) - 3.1669
+    a = 103.1668 * math.exp(-0.04354 * max(0.0, cpl)) - 3.1669
+    return float(max(0.0, min(100.0, a)))
+
+
+def analyze_pgn_text(
+    pgn_text: str,
+    *,
+    engine_path: str,
+    time_per_move: float = 0.05,
+    max_plies: int = 200,
+) -> AnalyzeReport:
+    pgn_io = StringIO(pgn_text)
+
+    games: list[GameReport] = []
+
+    engine = chess.engine.SimpleEngine.popen_uci(engine_path)
+    try:
+        while True:
+            game = chess.pgn.read_game(pgn_io)
+            if game is None:
+                break
+
+            board = game.board()
+            plies: list[PlyReport] = []
+
+            node = game
+            ply_idx = 0
+            for move in game.mainline_moves():
+                if ply_idx >= max_plies:
+                    break
+
+                side = "white" if board.turn == chess.WHITE else "black"
+                pov = chess.WHITE if board.turn == chess.WHITE else chess.BLACK
+
+                # Best evaluation at root position (from side-to-move perspective)
+                info_best = engine.analyse(board, chess.engine.Limit(time=time_per_move))
+                best_cp = _score_to_cp(info_best["score"].pov(pov))
+
+                # Played move eval: evaluate after making the move, but still from the player perspective
+                san = board.san(move)
+                uci = move.uci()
+                board.push(move)
+                info_played = engine.analyse(board, chess.engine.Limit(time=time_per_move))
+                played_cp = _score_to_cp(info_played["score"].pov(pov))
+
+                cpl = max(0, best_cp - played_cp)
+                acc = _lichess_accuracy_from_cpl(cpl)
+                label = _cpl_label(cpl)
+
+                plies.append(
+                    PlyReport(
+                        ply=ply_idx + 1,
+                        san=san,
+                        uci=uci,
+                        side=side,
+                        best_cp=best_cp,
+                        played_cp=played_cp,
+                        cpl=cpl,
+                        accuracy=acc,
+                        label=label,  # type: ignore[arg-type]
+                    )
+                )
+
+                ply_idx += 1
+
+            # Aggregate stats
+            cpls_w = [p.cpl for p in plies if p.side == "white" and p.cpl is not None]
+            cpls_b = [p.cpl for p in plies if p.side == "black" and p.cpl is not None]
+            avg_w = sum(cpls_w) / len(cpls_w) if cpls_w else None
+            avg_b = sum(cpls_b) / len(cpls_b) if cpls_b else None
+
+            acc_w = _lichess_accuracy_from_cpl(avg_w) if avg_w is not None else None
+            acc_b = _lichess_accuracy_from_cpl(avg_b) if avg_b is not None else None
+
+            games.append(
+                GameReport(
+                    headers=dict(game.headers),
+                    plies=plies,
+                    avg_cpl_white=avg_w,
+                    avg_cpl_black=avg_b,
+                    accuracy_white=acc_w,
+                    accuracy_black=acc_b,
+                )
+            )
+
+    finally:
+        engine.quit()
+
+    return AnalyzeReport(
+        games=games,
+        engine_path=engine_path,
+        time_per_move=time_per_move,
+        max_plies=max_plies,
+    )

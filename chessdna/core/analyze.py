@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
 from io import StringIO
-from typing import Any, Literal
+from typing import Literal
 
 import chess
-import chess.engine
 import chess.pgn
 from pydantic import BaseModel, Field
 
@@ -43,14 +41,6 @@ class AnalyzeReport(BaseModel):
     max_plies: int
 
 
-def _score_to_cp(score: chess.engine.PovScore, *, mate_score: int = 100000) -> int:
-    cp = score.score(mate_score=mate_score)
-    if cp is None:
-        # Should not happen if mate_score provided, but keep safe
-        return 0
-    return int(cp)
-
-
 def _cpl_label(cpl: int) -> str:
     if cpl >= 300:
         return "blunder"
@@ -63,7 +53,6 @@ def _cpl_label(cpl: int) -> str:
 
 def _lichess_accuracy_from_cpl(cpl: float) -> float:
     # Commonly used approximation of Lichess accuracy mapping.
-    # Not official API, but good for a human-friendly score.
     # accuracy = 103.1668 * exp(-0.04354*cpl) - 3.1669
     a = 103.1668 * math.exp(-0.04354 * max(0.0, cpl)) - 3.1669
     return float(max(0.0, min(100.0, a)))
@@ -97,21 +86,18 @@ def analyze_pgn_text(
                     break
 
                 side = "white" if board.turn == chess.WHITE else "black"
-
                 movetime_ms = max(10, int(time_per_move * 1000))
 
-                # Best evaluation at current position (from side-to-move perspective)
-                best_cp, _bestmove = engine.eval_position(moves_so_far, movetime_ms=movetime_ms)
+                # Best eval at current position from side-to-move perspective
+                best_cp, _ = engine.eval_position(moves_so_far, movetime_ms=movetime_ms)
 
                 san = board.san(move)
                 uci = move.uci()
 
-                # Evaluate after played move, but from the same player's perspective
+                # Evaluate after played move; engine score is then from opponent-to-move.
                 board.push(move)
                 moves_so_far.append(uci)
                 played_cp_next, _ = engine.eval_position(moves_so_far, movetime_ms=movetime_ms)
-
-                # Convert played score to "player perspective at decision time": after move it's opponent to move.
                 played_cp = -played_cp_next
 
                 cpl = max(0, best_cp - played_cp)
@@ -134,7 +120,6 @@ def analyze_pgn_text(
 
                 ply_idx += 1
 
-            # Aggregate stats
             cpls_w = [p.cpl for p in plies if p.side == "white" and p.cpl is not None]
             cpls_b = [p.cpl for p in plies if p.side == "black" and p.cpl is not None]
             avg_w = sum(cpls_w) / len(cpls_w) if cpls_w else None

@@ -86,12 +86,15 @@ async def analyze(
         )
 
     except Exception as e:
+        import traceback
+
         # Show a friendly error page instead of a raw 500.
         return TEMPLATES.TemplateResponse(
             "error.html",
             {
                 "request": request,
                 "error": repr(e),
+                "trace": traceback.format_exc(),
                 "engine_path": engine_path,
                 "hint": "常見原因：Stockfish 路徑錯誤 / PGN 內容格式異常 / 檔案不是 UTF-8。",
             },

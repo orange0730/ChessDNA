@@ -71,7 +71,25 @@
     .divider{height:1px;background:var(--line);margin:14px 0;}
   </style>
   <script>
+    function showInlineError(msg){
+      const el=document.getElementById('inlineErr');
+      if(!el) return;
+      el.textContent = msg;
+      el.style.display = msg ? 'block' : 'none';
+    }
+
     function onSubmit(){
+      const file = document.querySelector('input[name="pgn"]');
+      const text = document.querySelector('textarea[name="pgn_text"]');
+      const hasFile = file && file.files && file.files.length > 0;
+      const hasText = text && text.value && text.value.trim().length > 0;
+
+      if(!hasFile && !hasText){
+        showInlineError('請上傳 PGN 檔或貼上 PGN 文字後再送出。');
+        return false;
+      }
+
+      showInlineError('');
       const btn=document.getElementById('submitBtn');
       btn.disabled=true;
       btn.textContent='分析中…（請稍等）';
@@ -92,6 +110,7 @@
     <form class="card" action="/analyze" method="post" enctype="multipart/form-data" onsubmit="return onSubmit();">
       <div class="cardHead"><strong>Analyze PGN</strong> <span class="small">（檔案或貼上文字二選一即可）</span></div>
       <div class="cardBody">
+        <div id="inlineErr" style="display:none;margin:0 0 12px;padding:10px 12px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.10);border-radius:12px;color:#fecaca;"></div>
         <div class="grid">
           <div>
             <div class="row">

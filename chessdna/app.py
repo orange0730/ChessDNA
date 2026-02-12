@@ -291,6 +291,14 @@ async def analyze(
 
     preview_token = (preview_token or "").strip()
 
+    # Stability guardrails for MVP: avoid huge fetch/preview payloads.
+    # Note: this also protects the preview_token reload path (after restart).
+    try:
+        fetch_max = int(fetch_max)
+    except Exception:
+        fetch_max = 10
+    fetch_max = max(1, min(fetch_max, 50))
+
     src = ""
     if preview_token:
         store = FETCH_STORE.get(preview_token)
@@ -347,12 +355,7 @@ async def analyze(
     lichess_user = (lichess_user or "").strip()
     chesscom_user = (chesscom_user or "").strip()
 
-    # Stability guardrails for MVP: avoid huge fetches that make the server hang.
-    try:
-        fetch_max = int(fetch_max)
-    except Exception:
-        fetch_max = 10
-    fetch_max = max(1, min(fetch_max, 50))
+    # (fetch_max already clamped above)
 
     if not src and req_platform in ("auto", "lichess") and lichess_user:
         from .core.lichess import fetch_user_games_pgn as fetch_lichess

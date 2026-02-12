@@ -1,8 +1,17 @@
 import argparse
+import os
 from pathlib import Path
 
 from .core.analyze import analyze_pgn_text
 from .core.pgn_utils import pgn_info, preview_games
+
+
+def default_stockfish_path() -> str:
+    # Keep consistent with web app; overridable by env var.
+    return os.environ.get(
+        "STOCKFISH_PATH",
+        r"D:\code\chess_train\stockfish\stockfish-windows-x86-64-avx2.exe",
+    )
 
 
 def main():
@@ -19,8 +28,8 @@ def main():
     a.add_argument("--pgn", required=True, help="Path to PGN file")
     a.add_argument(
         "--engine",
-        default=r"D:\code\chess_train\stockfish\stockfish-windows-x86-64-avx2.exe",
-        help="Path to Stockfish/engine binary",
+        default=default_stockfish_path(),
+        help="Path to Stockfish/engine binary (or set STOCKFISH_PATH env var)",
     )
     a.add_argument("--t", type=float, default=0.05, help="Time per move (seconds)")
     a.add_argument("--max-plies", type=int, default=200)
@@ -41,8 +50,8 @@ def main():
     )
     s.add_argument(
         "--engine",
-        default=r"D:\code\chess_train\stockfish\stockfish-windows-x86-64-avx2.exe",
-        help="Path to Stockfish/engine binary (optional; if missing, analyze is skipped)",
+        default=default_stockfish_path(),
+        help="Path to Stockfish/engine binary (or set STOCKFISH_PATH env var). If missing, analyze is skipped.",
     )
     s.add_argument("--t", type=float, default=0.02, help="Time per move (seconds)")
     s.add_argument("--max-plies", type=int, default=120)

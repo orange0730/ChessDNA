@@ -392,6 +392,49 @@ async def analyze(
 
     # (fetch_max already clamped above)
 
+    # If user explicitly selects a platform, require its username.
+    # (Client-side JS already blocks this, but we also guard server-side.)
+    if not src:
+        if req_platform == "lichess" and not lichess_user:
+            return TEMPLATES.TemplateResponse(
+                "index.html",
+                {
+                    "request": request,
+                    "default_engine": default_stockfish_path(),
+                    "default_time": 0.05,
+                    "preview_token": "",
+                    "games": [],
+                    "inline_err": "你選了 Lichess，但沒有輸入 Lichess username。",
+                    "prefill": {
+                        "platform": req_platform,
+                        "lichess_user": lichess_user,
+                        "chesscom_user": chesscom_user,
+                        "fetch_max": fetch_max,
+                    },
+                },
+                status_code=400,
+            )
+
+        if req_platform == "chesscom" and not chesscom_user:
+            return TEMPLATES.TemplateResponse(
+                "index.html",
+                {
+                    "request": request,
+                    "default_engine": default_stockfish_path(),
+                    "default_time": 0.05,
+                    "preview_token": "",
+                    "games": [],
+                    "inline_err": "你選了 Chess.com，但沒有輸入 Chess.com username。",
+                    "prefill": {
+                        "platform": req_platform,
+                        "lichess_user": lichess_user,
+                        "chesscom_user": chesscom_user,
+                        "fetch_max": fetch_max,
+                    },
+                },
+                status_code=400,
+            )
+
     if not src and req_platform in ("auto", "lichess") and lichess_user:
         from .core.lichess import fetch_user_games_pgn as fetch_lichess
 

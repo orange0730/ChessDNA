@@ -76,12 +76,18 @@ def main():
 
     if args.cmd == "analyze":
         pgn_text = Path(args.pgn).read_text(encoding="utf-8", errors="replace")
+        raw_t = args.t
+        raw_mx = args.max_plies
         report = analyze_pgn_text(
             pgn_text,
             engine_path=args.engine,
-            time_per_move=args.t,
-            max_plies=args.max_plies,
+            time_per_move=raw_t,
+            max_plies=raw_mx,
         )
+        if float(report.time_per_move) != float(raw_t):
+            print(f"[WARN] --t clamped to {report.time_per_move} (MVP safety limit)")
+        if int(report.max_plies) != int(raw_mx):
+            print(f"[WARN] --max-plies clamped to {report.max_plies} (MVP safety limit)")
         Path(args.out).write_text(report.model_dump_json(indent=2), encoding="utf-8")
         print(f"[OK] wrote {args.out}")
 

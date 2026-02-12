@@ -98,6 +98,19 @@ def analyze_pgn_text(
     max_plies: int = 200,
     player_name: str | None = None,
 ) -> AnalyzeReport:
+    # Server-side guardrails (MVP stability): clamp potentially expensive knobs.
+    try:
+        time_per_move = float(time_per_move)
+    except Exception:
+        time_per_move = 0.05
+    time_per_move = max(0.01, min(time_per_move, 2.0))
+
+    try:
+        max_plies = int(max_plies)
+    except Exception:
+        max_plies = 200
+    max_plies = max(10, min(max_plies, 2000))
+
     pgn_io = StringIO(pgn_text)
 
     games: list[GameReport] = []

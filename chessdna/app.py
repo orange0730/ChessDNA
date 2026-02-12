@@ -406,7 +406,7 @@ async def analyze(
                     "default_time": 0.05,
                     "preview_token": preview_token,
                     "games": previews,
-                    "inline_err": "你目前在『線上抓棋譜預覽』模式：請至少勾選 1 盤對局後再按『開始分析』。",
+                    "inline_err": "請至少勾選 1 盤 (Select at least 1 game) 才能開始分析。",
                     "prefill": {
                         "platform": req_platform,
                         "lichess_user": lichess_user,

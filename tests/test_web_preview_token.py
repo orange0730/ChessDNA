@@ -45,5 +45,4 @@ def test_analyze_requires_selection_when_using_preview_token():
     )
 
     assert r.status_code == 400
-    assert "預覽" in r.text
-    assert "至少勾選" in r.text
+    assert "Select at least 1 game" in r.text

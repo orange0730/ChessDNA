@@ -44,6 +44,9 @@ REPORT_STORE: dict[str, dict[str, str]] = {}
 REPORT_TMP_DIR = Path(tempfile.gettempdir()) / "chessdna_reports"
 REPORT_TMP_DIR.mkdir(exist_ok=True)
 
+# In-memory fetched PGN store (MVP). Maps token -> {"previews": [...], "games": [pgn_str...]}
+FETCH_STORE: dict[str, dict[str, object]] = {}
+
 static_dir = BASE_DIR / "static"
 static_dir.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
@@ -57,6 +60,91 @@ def index(request: Request):
             "request": request,
             "default_engine": default_stockfish_path(),
             "default_time": 0.05,
+            "preview_token": "",
+            "games": [],
+        },
+    )
+
+
+@app.post("/preview", response_class=HTMLResponse)
+async def preview(
+    request: Request,
+    lichess_user: str = Form(""),
+    chesscom_user: str = Form(""),
+    fetch_max: int = Form(10),
+):
+    """Fetch recent games and show a selectable list (MVP UX step)."""
+
+    lichess_user = (lichess_user or "").strip()
+    chesscom_user = (chesscom_user or "").strip()
+
+    try:
+        fetch_max = int(fetch_max)
+    except Exception:
+        fetch_max = 10
+    fetch_max = max(1, min(fetch_max, 50))
+
+    src = ""
+    platform = ""
+    try:
+        if lichess_user:
+            from .core.lichess import fetch_user_games_pgn as fetch_lichess
+
+            src = fetch_lichess(lichess_user, max_games=fetch_max).strip()
+            platform = "lichess"
+        elif chesscom_user:
+            from .core.chesscom import fetch_user_games_pgn as fetch_chesscom
+
+            src = fetch_chesscom(chesscom_user, max_games=fetch_max).strip()
+            platform = "chesscom"
+    except Exception as e:
+        import traceback
+
+        return TEMPLATES.TemplateResponse(
+            "error.html",
+            {
+                "request": request,
+                "error": repr(e),
+                "trace": traceback.format_exc(),
+                "engine_path": default_stockfish_path(),
+                "hint": "線上抓取失敗：可能是 username 不存在 / API 限流 / 網路問題。",
+            },
+            status_code=500,
+        )
+
+    if not src:
+        return TEMPLATES.TemplateResponse(
+            "error.html",
+            {
+                "request": request,
+                "error": "ValueError('Empty PGN from online fetch')",
+                "trace": "",
+                "engine_path": default_stockfish_path(),
+                "hint": "抓不到棋譜：請確認 username 是否正確，且帳號對局是公開的。",
+            },
+            status_code=400,
+        )
+
+    from .core.pgn_utils import preview_games
+
+    previews, raw_games = preview_games(src, max_games=fetch_max)
+
+    token = uuid.uuid4().hex
+    FETCH_STORE[token] = {"platform": platform, "previews": previews, "games": raw_games}
+
+    return TEMPLATES.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "default_engine": default_stockfish_path(),
+            "default_time": 0.05,
+            "preview_token": token,
+            "games": previews,
+            "prefill": {
+                "lichess_user": lichess_user,
+                "chesscom_user": chesscom_user,
+                "fetch_max": fetch_max,
+            },
         },
     )
 
@@ -76,13 +164,64 @@ async def analyze(
     lichess_user: str = Form(""),
     chesscom_user: str = Form(""),
     fetch_max: int = Form(10),
+    preview_token: str = Form(""),
+    game_idx: list[int] = Form([]),
     player_name: str = Form(""),
     engine_path: str = Form(default_stockfish_path()),
     time_per_move: float = Form(0.05),
     max_plies: int = Form(200),
 ):
-    # Prefer pasted text, then online fetch, then uploaded file
-    src = (pgn_text or "").strip()
+    # Source priority:
+    # 1) preview_token + selected game_idx (online list->select UX)
+    # 2) pasted pgn_text
+    # 3) online fetch by username
+    # 4) uploaded file
+
+    preview_token = (preview_token or "").strip()
+
+    src = ""
+    if preview_token:
+        store = FETCH_STORE.get(preview_token)
+        if not store:
+            return TEMPLATES.TemplateResponse(
+                "error.html",
+                {
+                    "request": request,
+                    "error": "ValueError('preview_token expired')",
+                    "trace": "",
+                    "engine_path": engine_path,
+                    "hint": "這個預覽 token 已失效（伺服器重啟或時間過久）。請回到首頁重新抓取棋譜。",
+                },
+                status_code=400,
+            )
+
+        games = list(store.get("games") or [])
+        previews = list(store.get("previews") or [])
+
+        selected = sorted(set(int(x) for x in (game_idx or [])))
+        if not selected:
+            # No selection: re-render index with list
+            return TEMPLATES.TemplateResponse(
+                "index.html",
+                {
+                    "request": request,
+                    "default_engine": default_stockfish_path(),
+                    "default_time": 0.05,
+                    "preview_token": preview_token,
+                    "games": previews,
+                    "inline_err": "請先勾選要分析的對局（至少 1 盤）。",
+                },
+                status_code=400,
+            )
+
+        chosen: list[str] = []
+        for i in selected:
+            if 0 <= i < len(games):
+                chosen.append(str(games[i]).strip())
+        src = "\n\n".join([c for c in chosen if c]).strip()
+
+    if not src:
+        src = (pgn_text or "").strip()
 
     lichess_user = (lichess_user or "").strip()
     chesscom_user = (chesscom_user or "").strip()

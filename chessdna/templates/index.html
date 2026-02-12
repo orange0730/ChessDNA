@@ -78,7 +78,7 @@
       el.style.display = msg ? 'block' : 'none';
     }
 
-    function onSubmit(){
+    function onSubmit(ev){
       const file = document.querySelector('input[name="pgn"]');
       const text = document.querySelector('textarea[name="pgn_text"]');
       const lich = document.querySelector('input[name="lichess_user"]');
@@ -87,9 +87,29 @@
       const hasFile = file && file.files && file.files.length > 0;
       const hasText = text && text.value && text.value.trim().length > 0;
       const hasOnline = (lich && lich.value.trim().length>0) || (ccom && ccom.value.trim().length>0);
+      const pt = document.querySelector('input[name="preview_token"]');
+      const hasPreview = pt && pt.value && pt.value.trim().length>0;
+      const hasSelection = document.querySelectorAll('input[name="game_idx"]:checked').length > 0;
 
-      if(!hasFile && !hasText && !hasOnline){
+      const submitterId = ev && ev.submitter ? ev.submitter.id : '';
+      const isPreview = submitterId === 'previewBtn';
+
+      if(isPreview){
+        if(!hasOnline){
+          showInlineError('要列出對局，請先輸入 Lichess 或 Chess.com username。');
+          return false;
+        }
+        showInlineError('');
+        return true;
+      }
+
+      if(!hasFile && !hasText && !hasOnline && !(hasPreview && hasSelection)){
         showInlineError('請上傳 PGN 檔、貼上 PGN 文字，或輸入 Lichess/Chess.com username 後再送出。');
+        return false;
+      }
+
+      if(hasPreview && !hasSelection){
+        showInlineError('你有進入「線上抓棋譜預覽」模式，但尚未勾選任何對局。');
         return false;
       }
 
@@ -111,10 +131,10 @@
       <div class="pill">Tip: time_per_move 越大越準但越慢</div>
     </div>
 
-    <form class="card" action="/analyze" method="post" enctype="multipart/form-data" onsubmit="return onSubmit();">
+    <form class="card" action="/analyze" method="post" enctype="multipart/form-data" onsubmit="return onSubmit(event);">
       <div class="cardHead"><strong>Analyze PGN</strong> <span class="small">（檔案 / 貼上 / 線上抓取 擇一）</span></div>
       <div class="cardBody">
-        <div id="inlineErr" style="display:none;margin:0 0 12px;padding:10px 12px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.10);border-radius:12px;color:#fecaca;"></div>
+        <div id="inlineErr" style="{% if inline_err %}display:block{% else %}display:none{% endif %};margin:0 0 12px;padding:10px 12px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.10);border-radius:12px;color:#fecaca;">{{ inline_err or '' }}</div>
         <div class="grid">
           <div>
             <div class="row">
@@ -127,12 +147,36 @@
               <label>線上抓棋譜（可選）</label>
               <div class="hint">先支援 Lichess / Chess.com：輸入 username 後抓最近 N 盤並分析（MVP 目前上限 50 盤）。</div>
               <div style="display:grid;grid-template-columns:1fr;gap:10px;">
-                <input type="text" name="lichess_user" placeholder="Lichess username（例如 orange_bot）" />
-                <input type="text" name="chesscom_user" placeholder="Chess.com username（例如 hikaru）" />
-                <input type="number" name="fetch_max" step="1" min="1" value="10" />
+                <input type="text" name="lichess_user" placeholder="Lichess username（例如 orange_bot）" value="{{ (prefill.lichess_user if prefill is defined else '') }}" />
+                <input type="text" name="chesscom_user" placeholder="Chess.com username（例如 hikaru）" value="{{ (prefill.chesscom_user if prefill is defined else '') }}" />
+                <input type="number" name="fetch_max" step="1" min="1" value="{{ (prefill.fetch_max if prefill is defined else 10) }}" />
               </div>
               <div class="hint">同時填兩個時，會優先用 Lichess。</div>
+              <div class="btnRow" style="margin-top:10px;">
+                <button id="previewBtn" class="btn" type="submit" formaction="/preview" formmethod="post">列出對局（勾選後再分析）</button>
+                <span class="small">先 preview 再 analyze，可避免一次把全部抓來直接跑。</span>
+              </div>
             </div>
+
+            {% if games and preview_token %}
+            <div class="divider"></div>
+            <div class="row">
+              <label>選擇要分析的對局</label>
+              <input type="hidden" name="preview_token" value="{{ preview_token }}" />
+              <div class="hint">目前：列出最近抓到的對局（最多 {{ (prefill.fetch_max if prefill is defined else 50) }} 盤）。勾選後按右側「開始分析」。</div>
+              <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px;">
+                {% for g in games %}
+                <label style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(15,23,42,.35);font-weight:500;">
+                  <input type="checkbox" name="game_idx" value="{{ g.idx }}" style="width:auto;margin-top:2px;" checked />
+                  <div>
+                    <div style="font-size:13px;">{{ g.white }} vs {{ g.black }} <span class="small">({{ g.result }})</span></div>
+                    <div class="small">{{ g.date }} · {{ g.event }}</div>
+                  </div>
+                </label>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
 
             <div class="divider"></div>
 

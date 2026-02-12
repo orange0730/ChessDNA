@@ -156,6 +156,28 @@ async def preview(
         req_platform = "auto"
 
     # If user explicitly selects a platform, require its username.
+    # Also guard the auto case server-side (client JS blocks this, but don't rely on it).
+    if req_platform == "auto" and (not lichess_user) and (not chesscom_user):
+        return TEMPLATES.TemplateResponse(
+            "index.html",
+            {
+                "request": request,
+                "default_engine": default_stockfish_path(),
+                "default_time": 0.05,
+                "preview_token": "",
+                "games": [],
+                "inline_warn": inline_warn,
+                "inline_err": "要列出對局，請先輸入 Lichess 或 Chess.com username。",
+                "prefill": {
+                    "platform": req_platform,
+                    "lichess_user": lichess_user,
+                    "chesscom_user": chesscom_user,
+                    "fetch_max": fetch_max,
+                },
+            },
+            status_code=400,
+        )
+
     if req_platform == "lichess" and not lichess_user:
         return TEMPLATES.TemplateResponse(
             "index.html",

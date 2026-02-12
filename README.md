@@ -1,12 +1,14 @@
 # ChessDNA
 
-棋譜精準度分析（CPL/accuracy/blunder 分類）＋棋風建模（可解釋特徵）＋棋風模仿（偏好/走子模型）。
+用棋譜做棋力評估（CPL / accuracy / blunder rate 等）、棋風特徵建模，並朝「棋風模仿」前進。
 
 ## MVP (Phase 1)
-- 輸入：PGN（單盤/多盤）或從 Lichess API 抓取指定帳號最近 N 盤
+- 輸入：
+  - PGN（單盤 / 多盤）
+  - 或線上抓棋譜：Lichess / Chess.com（輸入帳號）
 - 輸出：
-  - 每盤報告：每步 CPL、accuracy%、錯誤分類（turning points 施工中）
-  - 玩家總覽：風格特徵向量 + 自然語言摘要（施工中）
+  - 每盤：平均 CPL、accuracy%、錯誤分類、turning points（逐步完善中）
+  - 玩家總覽：風格特徵（規劃中）
 
 ## Run (local)
 ### Web
@@ -33,16 +35,25 @@ chessdna selftest --pgn _sample_orange_bot.pgn
 chessdna analyze --pgn games.pgn --engine D:\code\chess_train\stockfish\stockfish-windows-x86-64-avx2.exe --t 0.05 --max-plies 200 --out report.json
 ```
 
-## Limitations (MVP)
-- Web UI 的下載連結目前是「暫存檔 + 記憶體 mapping」：伺服器重啟後，report_id 的 in-memory mapping 會消失；但若暫存檔仍在，下載端點會嘗試從 temp 目錄找回（仍可能被系統清理）。
-- 線上抓棋譜（Lichess/Chess.com）已支援「平台選擇→列對局→勾選→分析」的 MVP UX；目前預覽資料主要是 in-memory 暫存，但會 best-effort 把抓到的原始 PGN 落到 temp（因此伺服器重啟後 *有時* 仍可用同一個 preview_token 續跑；仍可能被系統清理）。同時也受 API 限流/網路狀態影響。
-- fetch_max 目前會被限制在 1~50，避免一次抓太多導致等待過久。
+## Web UX：線上抓棋譜（MVP）
+流程：
+1) 平台選擇：Lichess 或 Chess.com
+2) 輸入 username、fetch_max
+3) 列出最近對局清單
+4) 勾選要分析的對局（可多選）
+5) 點 Analyze 進行分析
 
-## Phase 2
+## Limitations (MVP)
+- Web UI 的「預覽 token / report_id」主要是記憶體 mapping（in-memory）。
+  - 伺服器重啟後 mapping 會清空。
+  - 但會 best-effort 把抓到的 PGN / 產出的報告寫到系統 temp，讓下載或預覽 token 有機會在重啟後仍可用（不保證）。
+- 線上抓棋譜受 API 限流 / 網路影響。
+- fetch_max 會被限制在 1~50，避免一次抓太多導致 UI 等太久或伺服器卡住。
+
+## Phase 2 (方向)
 - 棋風模仿：
-  - 輕量版：開局與偏好加權（trade/attack/complexity）
-  - 進階版：走子預測模型（top-k 命中率 + style consistency）
+  - 輕量的偏好向量（例如 trade / attack / complexity / risk）
+  - 走法選擇模型（top-k 命中率 + style consistency）
 
 ## Dev
-Python 3.11+ (目前環境 3.13 ok)
-
+- Python 3.11+（目前環境 3.13 也可）

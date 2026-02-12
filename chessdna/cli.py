@@ -2,7 +2,6 @@ import argparse
 from pathlib import Path
 
 from .core.analyze import analyze_pgn_text
-from .core.lichess import fetch_user_games_pgn
 from .core.pgn_utils import pgn_info
 
 
@@ -10,7 +9,8 @@ def main():
     p = argparse.ArgumentParser(prog="chessdna")
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    f = sub.add_parser("fetch", help="Fetch recent games from Lichess and save PGN")
+    f = sub.add_parser("fetch", help="Fetch recent games from Lichess/Chess.com and save PGN")
+    f.add_argument("--platform", choices=["lichess", "chesscom"], default="lichess")
     f.add_argument("--user", required=True)
     f.add_argument("--max", type=int, default=50)
     f.add_argument("--out", default="games.pgn")
@@ -56,7 +56,12 @@ def main():
     args = p.parse_args()
 
     if args.cmd == "fetch":
-        pgn = fetch_user_games_pgn(args.user, max_games=args.max)
+        if args.platform == "lichess":
+            from .core.lichess import fetch_user_games_pgn as fetch
+        else:
+            from .core.chesscom import fetch_user_games_pgn as fetch
+
+        pgn = fetch(args.user, max_games=args.max)
         Path(args.out).write_text(pgn, encoding="utf-8")
         print(f"[OK] wrote {args.out}")
 

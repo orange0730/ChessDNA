@@ -95,10 +95,34 @@
       updateSelectedCount();
     }
 
+    function updatePlatformFields(){
+      const sel = document.getElementById('platformSel');
+      const pf = sel ? (sel.value || 'auto') : 'auto';
+
+      const lichWrap = document.getElementById('lichessUserWrap');
+      const ccomWrap = document.getElementById('chesscomUserWrap');
+      const lich = document.getElementById('lichessUser');
+      const ccom = document.getElementById('chesscomUser');
+
+      // Auto: show both. Explicit platform: show only the relevant field.
+      const showLich = (pf === 'auto' || pf === 'lichess');
+      const showCcom = (pf === 'auto' || pf === 'chesscom');
+
+      if(lichWrap) lichWrap.style.display = showLich ? 'block' : 'none';
+      if(ccomWrap) ccomWrap.style.display = showCcom ? 'block' : 'none';
+      if(lich) lich.disabled = !showLich;
+      if(ccom) ccom.disabled = !showCcom;
+    }
+
     window.addEventListener('load', () => {
+      const sel = document.getElementById('platformSel');
+      if(sel) sel.addEventListener('change', updatePlatformFields);
+
       document.querySelectorAll('input[name="game_idx"]').forEach(cb => {
         cb.addEventListener('change', updateSelectedCount);
       });
+
+      updatePlatformFields();
       updateSelectedCount();
     });
 
@@ -119,10 +143,24 @@
       const isPreview = submitterId === 'previewBtn';
 
       if(isPreview){
-        if(!hasOnline){
+        const sel = document.getElementById('platformSel');
+        const pf = sel ? (sel.value || 'auto') : 'auto';
+        const hasLich = lich && lich.value && lich.value.trim().length>0;
+        const hasCcom = ccom && ccom.value && ccom.value.trim().length>0;
+
+        if(pf === 'lichess' && !hasLich){
+          showInlineError('你選了 Lichess，請先輸入 Lichess username。');
+          return false;
+        }
+        if(pf === 'chesscom' && !hasCcom){
+          showInlineError('你選了 Chess.com，請先輸入 Chess.com username。');
+          return false;
+        }
+        if(pf === 'auto' && !hasLich && !hasCcom){
           showInlineError('要列出對局，請先輸入 Lichess 或 Chess.com username。');
           return false;
         }
+
         showInlineError('');
         return true;
       }
@@ -172,14 +210,18 @@
               <label>線上抓棋譜（可選）</label>
               <div class="hint">先支援 Lichess / Chess.com：輸入 username 後抓最近 N 盤並分析（MVP 目前上限 50 盤）。</div>
               <div style="display:grid;grid-template-columns:1fr;gap:10px;">
-                <select name="platform" style="width:100%;background:rgba(15,23,42,.65);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:none;">
+                <select id="platformSel" name="platform" style="width:100%;background:rgba(15,23,42,.65);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:none;">
                   {% set pf = (prefill.platform if prefill is defined and prefill.platform is defined else 'auto') %}
                   <option value="auto" {% if pf=='auto' %}selected{% endif %}>平台：自動（有填 Lichess 就用 Lichess，否則 Chess.com）</option>
                   <option value="lichess" {% if pf=='lichess' %}selected{% endif %}>平台：Lichess</option>
                   <option value="chesscom" {% if pf=='chesscom' %}selected{% endif %}>平台：Chess.com</option>
                 </select>
-                <input type="text" name="lichess_user" placeholder="Lichess username（例如 orange_bot）" value="{{ (prefill.lichess_user if prefill is defined else '') }}" />
-                <input type="text" name="chesscom_user" placeholder="Chess.com username（例如 hikaru）" value="{{ (prefill.chesscom_user if prefill is defined else '') }}" />
+                <div id="lichessUserWrap">
+                  <input id="lichessUser" type="text" name="lichess_user" placeholder="Lichess username（例如 orange_bot）" value="{{ (prefill.lichess_user if prefill is defined else '') }}" />
+                </div>
+                <div id="chesscomUserWrap">
+                  <input id="chesscomUser" type="text" name="chesscom_user" placeholder="Chess.com username（例如 hikaru）" value="{{ (prefill.chesscom_user if prefill is defined else '') }}" />
+                </div>
                 <input type="number" name="fetch_max" step="1" min="1" max="50" value="{{ (prefill.fetch_max if prefill is defined else 10) }}" />
               </div>
               <div class="hint">選「自動」時：同時填兩個會優先用 Lichess。</div>

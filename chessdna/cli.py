@@ -129,9 +129,10 @@ def main():
             try:
                 from starlette.testclient import TestClient
 
-                from .app import app
+                from .app import FETCH_STORE, app
 
                 with TestClient(app) as c:
+                    # A) Smoke test: pasted PGN
                     r = c.post(
                         "/analyze",
                         data={
@@ -142,11 +143,34 @@ def main():
                         },
                     )
                     if r.status_code >= 400:
-                        raise SystemExit(f"[ERR] web smoke failed: {r.status_code} {r.text[:200]}")
+                        raise SystemExit(f"[ERR] web smoke failed (/analyze pasted): {r.status_code} {r.text[:200]}")
                     if "report" not in r.text.lower():
                         # best-effort assertion: report page should include 'report' keyword
-                        print("[WARN] web smoke: response did not contain 'report' keyword (may be template change)")
-                print("[OK] web smoke /analyze")
+                        print("[WARN] web smoke(/analyze pasted): response did not contain 'report' keyword (may be template change)")
+                    print("[OK] web smoke /analyze (pasted)")
+
+                    # B) Smoke test: online UX path without real network
+                    # Seed FETCH_STORE directly then call /analyze with preview_token + game_idx.
+                    import uuid
+
+                    token = "selftest_" + uuid.uuid4().hex
+                    FETCH_STORE[token] = {"platform": "", "previews": previews, "games": raw_games}
+
+                    r2 = c.post(
+                        "/analyze",
+                        data={
+                            "preview_token": token,
+                            "game_idx": [0],
+                            "time_per_move": 0.01,
+                            "max_plies": 40,
+                            "engine_path": args.engine,
+                        },
+                    )
+                    if r2.status_code >= 400:
+                        raise SystemExit(f"[ERR] web smoke failed (/analyze preview_token): {r2.status_code} {r2.text[:200]}")
+                    if "report" not in r2.text.lower():
+                        print("[WARN] web smoke(/analyze preview_token): response did not contain 'report' keyword (may be template change)")
+                    print("[OK] web smoke /analyze (preview_token)")
             except SystemExit:
                 raise
             except Exception as e:

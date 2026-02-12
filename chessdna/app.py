@@ -8,6 +8,7 @@ import uuid
 import asyncio
 import anyio
 from functools import partial
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse
@@ -35,7 +36,27 @@ def default_stockfish_path() -> str:
     )
 
 
-app = FastAPI(title="ChessDNA", version="0.1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Avoid leaking disk space over long-running dev sessions.
+    # Configurable via env vars; defaults are conservative.
+    try:
+        report_hours = float(os.environ.get("CHESSDNA_REPORT_TMP_MAX_AGE_HOURS", "168"))  # 7 days
+    except Exception:
+        report_hours = 168.0
+
+    try:
+        fetch_hours = float(os.environ.get("CHESSDNA_FETCH_TMP_MAX_AGE_HOURS", "48"))  # 2 days
+    except Exception:
+        fetch_hours = 48.0
+
+    _cleanup_tmp_dir(REPORT_TMP_DIR, max_age_hours=report_hours, suffixes=(".json", ".html"))
+    _cleanup_tmp_dir(FETCH_TMP_DIR, max_age_hours=fetch_hours, suffixes=(".pgn",))
+
+    yield
+
+
+app = FastAPI(title="ChessDNA", version="0.1.0", lifespan=lifespan)
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -87,22 +108,7 @@ FETCH_TMP_DIR = Path(tempfile.gettempdir()) / "chessdna_fetch"
 FETCH_TMP_DIR.mkdir(exist_ok=True)
 
 
-@app.on_event("startup")
-async def _startup_housekeeping():
-    # Avoid leaking disk space over long-running dev sessions.
-    # Configurable via env vars; defaults are conservative.
-    try:
-        report_hours = float(os.environ.get("CHESSDNA_REPORT_TMP_MAX_AGE_HOURS", "168"))  # 7 days
-    except Exception:
-        report_hours = 168.0
-
-    try:
-        fetch_hours = float(os.environ.get("CHESSDNA_FETCH_TMP_MAX_AGE_HOURS", "48"))  # 2 days
-    except Exception:
-        fetch_hours = 48.0
-
-    _cleanup_tmp_dir(REPORT_TMP_DIR, max_age_hours=report_hours, suffixes=(".json", ".html"))
-    _cleanup_tmp_dir(FETCH_TMP_DIR, max_age_hours=fetch_hours, suffixes=(".pgn",))
+# startup housekeeping moved to FastAPI lifespan
 
 static_dir = BASE_DIR / "static"
 static_dir.mkdir(exist_ok=True)
@@ -112,6 +118,7 @@ app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return TEMPLATES.TemplateResponse(
+        request,
         "index.html",
         {
             "request": request,
@@ -159,6 +166,7 @@ async def preview(
     # Also guard the auto case server-side (client JS blocks this, but don't rely on it).
     if req_platform == "auto" and (not lichess_user) and (not chesscom_user):
         return TEMPLATES.TemplateResponse(
+            request,
             "index.html",
             {
                 "request": request,
@@ -180,6 +188,7 @@ async def preview(
 
     if req_platform == "lichess" and not lichess_user:
         return TEMPLATES.TemplateResponse(
+            request,
             "index.html",
             {
                 "request": request,
@@ -201,6 +210,7 @@ async def preview(
 
     if req_platform == "chesscom" and not chesscom_user:
         return TEMPLATES.TemplateResponse(
+            request,
             "index.html",
             {
                 "request": request,
@@ -237,6 +247,7 @@ async def preview(
         import traceback
 
         return TEMPLATES.TemplateResponse(
+            request,
             "error.html",
             {
                 "request": request,
@@ -250,6 +261,7 @@ async def preview(
 
     if not src:
         return TEMPLATES.TemplateResponse(
+            request,
             "error.html",
             {
                 "request": request,
@@ -275,6 +287,7 @@ async def preview(
         pass
 
     return TEMPLATES.TemplateResponse(
+        request,
         "index.html",
         {
             "request": request,
@@ -359,6 +372,7 @@ async def analyze(
 
         if not store:
             return TEMPLATES.TemplateResponse(
+                request,
                 "error.html",
                 {
                     "request": request,
@@ -384,6 +398,7 @@ async def analyze(
             # If user is in preview mode, require an explicit selection.
             # Otherwise it is easy to accidentally re-fetch and analyze *all* games.
             return TEMPLATES.TemplateResponse(
+                request,
                 "index.html",
                 {
                     "request": request,
@@ -419,6 +434,7 @@ async def analyze(
     if not src:
         if req_platform == "lichess" and not lichess_user:
             return TEMPLATES.TemplateResponse(
+                request,
                 "index.html",
                 {
                     "request": request,
@@ -439,6 +455,7 @@ async def analyze(
 
         if req_platform == "chesscom" and not chesscom_user:
             return TEMPLATES.TemplateResponse(
+                request,
                 "index.html",
                 {
                     "request": request,
@@ -472,6 +489,7 @@ async def analyze(
 
     if not src:
         return TEMPLATES.TemplateResponse(
+            request,
             "error.html",
             {
                 "request": request,
@@ -513,6 +531,7 @@ async def analyze(
         REPORT_STORE[report_id] = {"json": json_path, "html": html_path}
 
         return TEMPLATES.TemplateResponse(
+            request,
             "report.html",
             {"request": request, "report": report, "debug_path": json_path, "report_id": report_id},
         )
@@ -522,6 +541,7 @@ async def analyze(
 
         # Show a friendly error page instead of a raw 500.
         return TEMPLATES.TemplateResponse(
+            request,
             "error.html",
             {
                 "request": request,

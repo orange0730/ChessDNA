@@ -25,6 +25,10 @@ chessdna fetch --user orange_bot --max 10 --out games.pgn
 # quick validate/summarize PGN (no engine required)
 chessdna pgninfo --pgn games.pgn --max-games 200
 
+# minimal self-test (pgninfo + best-effort analyze)
+# - if Stockfish path is missing, it will auto-skip analyze
+chessdna selftest --pgn _sample_orange_bot.pgn
+
 # analyze PGN with Stockfish
 chessdna analyze --pgn games.pgn --engine D:\code\chess_train\stockfish\stockfish-windows-x86-64-avx2.exe --t 0.05 --max-plies 200 --out report.json
 ```

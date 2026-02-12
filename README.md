@@ -13,6 +13,8 @@
 
 ## Run (local)
 
+> Windows 終端顯示中文若出現亂碼：建議使用 **Windows Terminal + PowerShell**，並先執行 `chcp 65001`（UTF-8），或在 VS Code 內建終端執行。
+
 ### Web
 
 ```powershell

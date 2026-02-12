@@ -44,8 +44,12 @@ REPORT_STORE: dict[str, dict[str, str]] = {}
 REPORT_TMP_DIR = Path(tempfile.gettempdir()) / "chessdna_reports"
 REPORT_TMP_DIR.mkdir(exist_ok=True)
 
-# In-memory fetched PGN store (MVP). Maps token -> {"previews": [...], "games": [pgn_str...]}
+# In-memory fetched PGN store (MVP). Maps token -> {"platform": str, "previews": [...], "games": [pgn_str...]}
+# Best-effort persistence: we also write the fetched concatenated PGN to a temp file
+# so the preview_token can sometimes survive a server restart.
 FETCH_STORE: dict[str, dict[str, object]] = {}
+FETCH_TMP_DIR = Path(tempfile.gettempdir()) / "chessdna_fetch"
+FETCH_TMP_DIR.mkdir(exist_ok=True)
 
 static_dir = BASE_DIR / "static"
 static_dir.mkdir(exist_ok=True)
@@ -132,6 +136,12 @@ async def preview(
     token = uuid.uuid4().hex
     FETCH_STORE[token] = {"platform": platform, "previews": previews, "games": raw_games}
 
+    # Persist raw PGN for best-effort reload after restart.
+    try:
+        (FETCH_TMP_DIR / f"{token}.pgn").write_text(src, encoding="utf-8")
+    except Exception:
+        pass
+
     return TEMPLATES.TemplateResponse(
         "index.html",
         {
@@ -183,6 +193,20 @@ async def analyze(
     src = ""
     if preview_token:
         store = FETCH_STORE.get(preview_token)
+        if not store:
+            # Best-effort reload from temp (in case of server restart).
+            try:
+                p = FETCH_TMP_DIR / f"{preview_token}.pgn"
+                if p.exists():
+                    src2 = p.read_text(encoding="utf-8", errors="replace")
+                    from .core.pgn_utils import preview_games
+
+                    previews2, raw_games2 = preview_games(src2, max_games=fetch_max)
+                    store = {"platform": "", "previews": previews2, "games": raw_games2}
+                    FETCH_STORE[preview_token] = store
+            except Exception:
+                store = None
+
         if not store:
             return TEMPLATES.TemplateResponse(
                 "error.html",

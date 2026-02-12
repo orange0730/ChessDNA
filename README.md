@@ -28,7 +28,7 @@ chessdna analyze --pgn games.pgn --engine D:\code\chess_train\stockfish\stockfis
 
 ## Limitations (MVP)
 - Web UI 的下載連結目前是「暫存檔 + 記憶體 mapping」：伺服器重啟後，report_id 的 in-memory mapping 會消失；但若暫存檔仍在，下載端點會嘗試從 temp 目錄找回（仍可能被系統清理）。
-- 線上抓棋譜（Lichess/Chess.com）已支援「平台選擇→列對局→勾選→分析」的 MVP UX；但目前仍是 in-memory 暫存（伺服器重啟會失效），且受 API 限流/網路狀態影響。
+- 線上抓棋譜（Lichess/Chess.com）已支援「平台選擇→列對局→勾選→分析」的 MVP UX；目前預覽資料主要是 in-memory 暫存，但會 best-effort 把抓到的原始 PGN 落到 temp（因此伺服器重啟後 *有時* 仍可用同一個 preview_token 續跑；仍可能被系統清理）。同時也受 API 限流/網路狀態影響。
 - fetch_max 目前會被限制在 1~50，避免一次抓太多導致等待過久。
 
 ## Phase 2

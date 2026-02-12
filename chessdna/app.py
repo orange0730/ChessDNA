@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
+import time
 import uuid
 
 import asyncio
@@ -44,12 +45,64 @@ REPORT_STORE: dict[str, dict[str, str]] = {}
 REPORT_TMP_DIR = Path(tempfile.gettempdir()) / "chessdna_reports"
 REPORT_TMP_DIR.mkdir(exist_ok=True)
 
+
+def _cleanup_tmp_dir(tmp_dir: Path, *, max_age_hours: float, suffixes: tuple[str, ...]) -> int:
+    """Best-effort cleanup for temp artifacts.
+
+    Keeps the MVP behavior (write artifacts to temp), but prevents unbounded
+    growth over time.
+
+    Returns number of deleted files.
+    """
+
+    now = time.time()
+    max_age_s = max_age_hours * 3600.0
+    deleted = 0
+
+    try:
+        for p in tmp_dir.glob("*"):
+            if not p.is_file():
+                continue
+            if suffixes and p.suffix.lower() not in suffixes:
+                continue
+            try:
+                st = p.stat()
+                age = now - float(st.st_mtime)
+                if age > max_age_s:
+                    p.unlink(missing_ok=True)
+                    deleted += 1
+            except Exception:
+                # Best-effort: ignore individual file errors.
+                pass
+    except Exception:
+        pass
+
+    return deleted
+
 # In-memory fetched PGN store (MVP). Maps token -> {"platform": str, "previews": [...], "games": [pgn_str...]}
 # Best-effort persistence: we also write the fetched concatenated PGN to a temp file
 # so the preview_token can sometimes survive a server restart.
 FETCH_STORE: dict[str, dict[str, object]] = {}
 FETCH_TMP_DIR = Path(tempfile.gettempdir()) / "chessdna_fetch"
 FETCH_TMP_DIR.mkdir(exist_ok=True)
+
+
+@app.on_event("startup")
+async def _startup_housekeeping():
+    # Avoid leaking disk space over long-running dev sessions.
+    # Configurable via env vars; defaults are conservative.
+    try:
+        report_hours = float(os.environ.get("CHESSDNA_REPORT_TMP_MAX_AGE_HOURS", "168"))  # 7 days
+    except Exception:
+        report_hours = 168.0
+
+    try:
+        fetch_hours = float(os.environ.get("CHESSDNA_FETCH_TMP_MAX_AGE_HOURS", "48"))  # 2 days
+    except Exception:
+        fetch_hours = 48.0
+
+    _cleanup_tmp_dir(REPORT_TMP_DIR, max_age_hours=report_hours, suffixes=(".json", ".html"))
+    _cleanup_tmp_dir(FETCH_TMP_DIR, max_age_hours=fetch_hours, suffixes=(".pgn",))
 
 static_dir = BASE_DIR / "static"
 static_dir.mkdir(exist_ok=True)

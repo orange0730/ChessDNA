@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 from io import StringIO
 from typing import Literal
+from pathlib import Path
 
 import chess
 import chess.pgn
@@ -115,7 +116,14 @@ def analyze_pgn_text(
 
     games: list[GameReport] = []
 
-    engine = UciEngine(engine_path)
+    engine: UciEngine | None = None
+    # If Stockfish (or other UCI engine) is not available, degrade gracefully:
+    # still parse PGN + SAN/ply list so Web/CLI can run without hard dependency.
+    try:
+        if engine_path and Path(engine_path).is_file():
+            engine = UciEngine(engine_path)
+    except Exception:
+        engine = None
 
     # Cross-game player aggregates
     agg_cpls: list[int] = []
@@ -141,26 +149,35 @@ def analyze_pgn_text(
                 side = "white" if board.turn == chess.WHITE else "black"
                 movetime_ms = max(10, int(time_per_move * 1000))
 
-                # Best eval at current position from side-to-move perspective
-                best_cp, bestmove, pv = engine.eval_position(moves_so_far, movetime_ms=movetime_ms)
-
                 san = board.san(move)
                 uci = move.uci()
 
-                # Played-move eval in the SAME position (avoid perspective flip issues)
-                played_cp, _played_bestmove, _played_pv = engine.eval_position(
-                    moves_so_far,
-                    movetime_ms=movetime_ms,
-                    searchmoves=[uci],
-                )
+                if engine is not None:
+                    # Best eval at current position from side-to-move perspective
+                    best_cp, bestmove, pv = engine.eval_position(moves_so_far, movetime_ms=movetime_ms)
+
+                    # Played-move eval in the SAME position (avoid perspective flip issues)
+                    played_cp, _played_bestmove, _played_pv = engine.eval_position(
+                        moves_so_far,
+                        movetime_ms=movetime_ms,
+                        searchmoves=[uci],
+                    )
+
+                    cpl = max(0, best_cp - played_cp)
+                    acc = _lichess_accuracy_from_cpl(cpl)
+                    label = _cpl_label(cpl)
+                else:
+                    best_cp = None
+                    bestmove = None
+                    pv = []
+                    played_cp = None
+                    cpl = None
+                    acc = None
+                    label = "ok"
 
                 # Now advance the game state
                 board.push(move)
                 moves_so_far.append(uci)
-
-                cpl = max(0, best_cp - played_cp)
-                acc = _lichess_accuracy_from_cpl(cpl)
-                label = _cpl_label(cpl)
 
                 plies.append(
                     PlyReport(
@@ -253,7 +270,8 @@ def analyze_pgn_text(
             )
 
     finally:
-        engine.quit()
+        if engine is not None:
+            engine.quit()
 
     overview = None
     if player_name:

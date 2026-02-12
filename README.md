@@ -26,6 +26,11 @@ chessdna fetch --user orange_bot --max 10 --out games.pgn
 chessdna analyze --pgn games.pgn --engine D:\code\chess_train\stockfish\stockfish-windows-x86-64-avx2.exe --t 0.05 --max-plies 200 --out report.json
 ```
 
+## Limitations (MVP)
+- Web UI 的下載連結目前是「暫存檔 + 記憶體 mapping」：伺服器重啟後，舊的 report_id 會失效（本機 MVP OK）。
+- 線上抓棋譜（Lichess/Chess.com）目前是「抓最近 N 盤後直接分析」，尚未做到「列對局→勾選→分析」的 UX。
+- fetch_max 目前會被限制在 1~50，避免一次抓太多導致等待過久。
+
 ## Phase 2
 - 棋風模仿：
   - 輕量版：開局與偏好加權（trade/attack/complexity）

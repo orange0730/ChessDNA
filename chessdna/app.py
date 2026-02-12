@@ -87,6 +87,13 @@ async def analyze(
     lichess_user = (lichess_user or "").strip()
     chesscom_user = (chesscom_user or "").strip()
 
+    # Stability guardrails for MVP: avoid huge fetches that make the server hang.
+    try:
+        fetch_max = int(fetch_max)
+    except Exception:
+        fetch_max = 10
+    fetch_max = max(1, min(fetch_max, 50))
+
     if not src and lichess_user:
         from .core.lichess import fetch_user_games_pgn as fetch_lichess
 

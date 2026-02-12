@@ -19,7 +19,7 @@ def main():
     sub = p.add_subparsers(dest="cmd", required=True)
 
     f = sub.add_parser("fetch", help="Fetch recent games from Lichess/Chess.com and save PGN")
-    f.add_argument("--platform", choices=["lichess", "chesscom"], default="lichess")
+    f.add_argument("--platform", choices=["auto", "lichess", "chesscom"], default="lichess")
     f.add_argument("--user", required=True)
     f.add_argument("--max", type=int, default=50, help="Max games to fetch (1~50; values outside will be clamped)")
     f.add_argument("--out", default="games.pgn")
@@ -70,16 +70,38 @@ def main():
     args = p.parse_args()
 
     if args.cmd == "fetch":
-        if args.platform == "lichess":
-            from .core.lichess import fetch_user_games_pgn as fetch
-        else:
-            from .core.chesscom import fetch_user_games_pgn as fetch
+        from .core.http import FetchError
+
+        def fetch_lichess(u: str, *, max_games: int) -> str:
+            from .core.lichess import fetch_user_games_pgn
+
+            return fetch_user_games_pgn(u, max_games=max_games)
+
+        def fetch_chesscom(u: str, *, max_games: int) -> str:
+            from .core.chesscom import fetch_user_games_pgn
+
+            return fetch_user_games_pgn(u, max_games=max_games)
 
         max_games = max(1, min(int(args.max), 50))
         if max_games != int(args.max):
             print(f"[WARN] --max clamped to {max_games} (MVP safety limit)")
 
-        pgn = fetch(args.user, max_games=max_games)
+        pgn = ""
+        if args.platform == "lichess":
+            pgn = fetch_lichess(args.user, max_games=max_games)
+        elif args.platform == "chesscom":
+            pgn = fetch_chesscom(args.user, max_games=max_games)
+        else:
+            # Auto: try Lichess first (fast + single endpoint), then fallback to chess.com.
+            try:
+                pgn = fetch_lichess(args.user, max_games=max_games)
+                if not pgn.strip():
+                    print("[WARN] auto: lichess returned empty PGN; fallback to chess.com")
+                    pgn = fetch_chesscom(args.user, max_games=max_games)
+            except FetchError as e:
+                print(f"[WARN] auto: lichess fetch failed; fallback to chess.com: {e}")
+                pgn = fetch_chesscom(args.user, max_games=max_games)
+
         Path(args.out).write_text(pgn, encoding="utf-8")
         print(f"[OK] wrote {args.out}")
 

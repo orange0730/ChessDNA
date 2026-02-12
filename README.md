@@ -29,8 +29,11 @@ pip install -e .
 ```powershell
 # (option A) use installed console script
 
+# fetch PGN (auto tries Lichess first, then Chess.com)
+chessdna fetch --platform auto --user orange_bot --max 10 --out games.pgn
+
 # fetch PGN from lichess
-chessdna fetch --platform lichess --user orange_bot --max 10 --out games.pgn
+chessdna fetch --platform lichess --user orange_bot --max 10 --out games_lichess.pgn
 
 # fetch PGN from chess.com
 chessdna fetch --platform chesscom --user hikaru --max 10 --out games_chesscom.pgn

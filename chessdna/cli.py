@@ -2,6 +2,7 @@ import argparse
 import os
 from pathlib import Path
 
+from . import __version__
 from .core.analyze import analyze_pgn_text
 from .core.pgn_utils import pgn_info, preview_games
 
@@ -16,6 +17,7 @@ def default_stockfish_path() -> str:
 
 def main():
     p = argparse.ArgumentParser(prog="chessdna")
+    p.add_argument("--version", action="version", version=f"chessdna {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     f = sub.add_parser("fetch", help="Fetch recent games from Lichess/Chess.com and save PGN")

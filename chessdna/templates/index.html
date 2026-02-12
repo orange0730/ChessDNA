@@ -249,6 +249,7 @@
                   <div>
                     <div style="font-size:13px;">{{ g.white }} vs {{ g.black }} <span class="small">({{ g.result }})</span></div>
                     <div class="small">{{ g.date }} · {{ g.event }}</div>
+                    {% if g.site %}<div class="small">{{ g.site }}</div>{% endif %}
                   </div>
                 </label>
                 {% endfor %}

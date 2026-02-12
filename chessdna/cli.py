@@ -3,6 +3,7 @@ from pathlib import Path
 
 from .core.analyze import analyze_pgn_text
 from .core.lichess import fetch_user_games_pgn
+from .core.pgn_utils import pgn_info
 
 
 def main():
@@ -25,6 +26,10 @@ def main():
     a.add_argument("--max-plies", type=int, default=200)
     a.add_argument("--out", default="report.json")
 
+    i = sub.add_parser("pgninfo", help="Validate/summarize PGN without engine")
+    i.add_argument("--pgn", required=True, help="Path to PGN file")
+    i.add_argument("--max-games", type=int, default=200)
+
     args = p.parse_args()
 
     if args.cmd == "fetch":
@@ -42,6 +47,18 @@ def main():
         )
         Path(args.out).write_text(report.model_dump_json(indent=2), encoding="utf-8")
         print(f"[OK] wrote {args.out}")
+
+    if args.cmd == "pgninfo":
+        pgn_text = Path(args.pgn).read_text(encoding="utf-8", errors="replace")
+        info = pgn_info(pgn_text, max_games=args.max_games)
+        print(
+            "[OK] games={g} plies_min={mn} plies_max={mx} plies_avg={avg}".format(
+                g=info.games,
+                mn=info.plies_min,
+                mx=info.plies_max,
+                avg=(None if info.plies_avg is None else round(info.plies_avg, 2)),
+            )
+        )
 
 
 if __name__ == "__main__":

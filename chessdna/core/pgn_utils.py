@@ -71,3 +71,46 @@ def preview_games(pgn_text: str, *, max_games: int = 200) -> tuple[list[GamePrev
         )
 
     return previews, raw_games
+
+
+@dataclass
+class PgnInfo:
+    games: int
+    plies_min: int | None = None
+    plies_max: int | None = None
+    plies_avg: float | None = None
+
+
+def pgn_info(pgn_text: str, *, max_games: int | None = None) -> PgnInfo:
+    """Lightweight PGN validation/summary without engine.
+
+    Useful as a selftest when Stockfish isn't available.
+    """
+    pgn_text = (pgn_text or "").strip()
+    if not pgn_text:
+        return PgnInfo(games=0)
+
+    f = io.StringIO(pgn_text)
+    plies: list[int] = []
+    games = 0
+    while True:
+        game = chess.pgn.read_game(f)
+        if game is None:
+            break
+        games += 1
+        n = 0
+        for _mv in game.mainline_moves():
+            n += 1
+        plies.append(n)
+        if max_games is not None and games >= max_games:
+            break
+
+    if not plies:
+        return PgnInfo(games=games)
+
+    return PgnInfo(
+        games=games,
+        plies_min=min(plies),
+        plies_max=max(plies),
+        plies_avg=sum(plies) / len(plies),
+    )

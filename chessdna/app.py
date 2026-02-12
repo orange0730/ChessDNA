@@ -224,26 +224,17 @@ async def analyze(
         previews = list(store.get("previews") or [])
 
         selected = sorted(set(int(x) for x in (game_idx or [])))
-        if not selected:
-            # No selection: re-render index with list
-            return TEMPLATES.TemplateResponse(
-                "index.html",
-                {
-                    "request": request,
-                    "default_engine": default_stockfish_path(),
-                    "default_time": 0.05,
-                    "preview_token": preview_token,
-                    "games": previews,
-                    "inline_err": "請先勾選要分析的對局（至少 1 盤）。",
-                },
-                status_code=400,
-            )
-
-        chosen: list[str] = []
-        for i in selected:
-            if 0 <= i < len(games):
-                chosen.append(str(games[i]).strip())
-        src = "\n\n".join([c for c in chosen if c]).strip()
+        if selected:
+            chosen: list[str] = []
+            for i in selected:
+                if 0 <= i < len(games):
+                    chosen.append(str(games[i]).strip())
+            src = "\n\n".join([c for c in chosen if c]).strip()
+        else:
+            # If user has a preview_token but didn't select any games,
+            # don't hard-fail: allow fallback to other sources (pgn text / username / upload).
+            # We'll only error later if *all* sources are missing.
+            src = ""
 
     if not src:
         src = (pgn_text or "").strip()

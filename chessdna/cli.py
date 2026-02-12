@@ -19,7 +19,7 @@ def main():
     sub = p.add_subparsers(dest="cmd", required=True)
 
     f = sub.add_parser("fetch", help="Fetch recent games from Lichess/Chess.com and save PGN")
-    f.add_argument("--platform", choices=["auto", "lichess", "chesscom"], default="lichess")
+    f.add_argument("--platform", choices=["auto", "lichess", "chesscom"], default="auto")
     f.add_argument("--user", required=True)
     f.add_argument("--max", type=int, default=50, help="Max games to fetch (1~50; values outside will be clamped)")
     f.add_argument("--out", default="games.pgn")

@@ -222,7 +222,7 @@
                 <div id="chesscomUserWrap">
                   <input id="chesscomUser" type="text" name="chesscom_user" placeholder="Chess.com username（例：hikaru）" value="{{ (prefill.chesscom_user if prefill is defined else '') }}" />
                 </div>
-                <input type="number" name="fetch_max" step="1" min="1" max="50" value="{{ (prefill.fetch_max if prefill is defined else 10) }}" />
+                <input type="number" name="fetch_max" step="1" min="1" max="50" value="{{ (prefill.fetch_max if prefill is defined else 10) }}" placeholder="最多抓幾盤（1~50）" title="最多抓幾盤（1~50）" aria-label="fetch_max" />
               </div>
               <div class="hint">「自動」模式下：若兩個都填，優先使用 Lichess。</div>
               <div class="btnRow" style="margin-top:10px;">

@@ -65,13 +65,17 @@ chessdna analyze --pgn games.pgn --engine D:\code\chess_train\stockfish\stockfis
 - Web UI 使用 token / report_id 做「報告 mapping（in-memory）」
   - 伺服器重啟後 mapping 會消失
   - 但會 best-effort 把 PGN / 報告寫到系統 temp，所以在保留時間內，即使重啟仍可能下載成功（不保證）
-- temp 檔案清理（startup best-effort）
-  - 報告預設保留 7 天，可用 `CHESSDNA_REPORT_TMP_MAX_AGE_HOURS` 調整
-  - 線上抓到的 PGN 預設保留 48 小時，可用 `CHESSDNA_FETCH_TMP_MAX_AGE_HOURS` 調整
-- 線上抓棋譜受 API / 網路影響
+- temp 檔案清理（startup / lifespan best-effort）
+  - 報告預設保留 7 天，可用 `CHESSDNA_REPORT_TMP_MAX_AGE_HOURS` 調整（單位：hours）
+  - 線上抓到的 PGN 預設保留 48 小時，可用 `CHESSDNA_FETCH_TMP_MAX_AGE_HOURS` 調整（單位：hours）
+- 線上抓棋譜受 API / 網路影響（可能遇到 429 / 5xx）
 - fetch_max 限制 1~50，避免一次抓太多導致 UI 等太久或伺服器卡住
 - time_per_move 會 clamp 到 0.01~1.00 秒（太大會非常慢）
 - max_plies 會 clamp 到 10~800（太大會跑很久）
+
+### Notes
+
+- 「線上棋譜預覽」模式下，Analyze 需要先勾選至少 1 盤；避免不小心把全部抓到的對局都丟去分析。
 
 ## Phase 2（發想）
 

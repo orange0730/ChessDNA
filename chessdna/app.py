@@ -152,6 +152,29 @@ static_dir.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
+def _make_prefill(
+    *,
+    platform: str = "auto",
+    lichess_user: str = "",
+    chesscom_user: str = "",
+    fetch_max: int = 10,
+    player_name: str = "",
+    engine_path: str = "",
+    time_per_move: float = 0.05,
+    max_plies: int = 200,
+) -> dict[str, object]:
+    return {
+        "platform": platform,
+        "lichess_user": lichess_user,
+        "chesscom_user": chesscom_user,
+        "fetch_max": fetch_max,
+        "player_name": player_name,
+        "engine_path": engine_path,
+        "time_per_move": time_per_move,
+        "max_plies": max_plies,
+    }
+
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return TEMPLATES.TemplateResponse(
@@ -163,6 +186,7 @@ def index(request: Request):
             "default_time": 0.05,
             "preview_token": "",
             "games": [],
+            "prefill": _make_prefill(engine_path=default_stockfish_path()),
         },
     )
 
@@ -213,12 +237,13 @@ async def preview(
                 "games": [],
                 "inline_warn": inline_warn,
                 "inline_err": "要列出對局，請先輸入 Lichess 或 Chess.com username。",
-                "prefill": {
-                    "platform": req_platform,
-                    "lichess_user": lichess_user,
-                    "chesscom_user": chesscom_user,
-                    "fetch_max": fetch_max,
-                },
+                "prefill": _make_prefill(
+                    platform=req_platform,
+                    lichess_user=lichess_user,
+                    chesscom_user=chesscom_user,
+                    fetch_max=fetch_max,
+                    engine_path=default_stockfish_path(),
+                ),
             },
             status_code=400,
         )
@@ -235,12 +260,13 @@ async def preview(
                 "games": [],
                 "inline_warn": inline_warn,
                 "inline_err": "你選了 Lichess，但沒有輸入 Lichess username。",
-                "prefill": {
-                    "platform": req_platform,
-                    "lichess_user": lichess_user,
-                    "chesscom_user": chesscom_user,
-                    "fetch_max": fetch_max,
-                },
+                "prefill": _make_prefill(
+                    platform=req_platform,
+                    lichess_user=lichess_user,
+                    chesscom_user=chesscom_user,
+                    fetch_max=fetch_max,
+                    engine_path=default_stockfish_path(),
+                ),
             },
             status_code=400,
         )
@@ -257,12 +283,13 @@ async def preview(
                 "games": [],
                 "inline_warn": inline_warn,
                 "inline_err": "你選了 Chess.com，但沒有輸入 Chess.com username。",
-                "prefill": {
-                    "platform": req_platform,
-                    "lichess_user": lichess_user,
-                    "chesscom_user": chesscom_user,
-                    "fetch_max": fetch_max,
-                },
+                "prefill": _make_prefill(
+                    platform=req_platform,
+                    lichess_user=lichess_user,
+                    chesscom_user=chesscom_user,
+                    fetch_max=fetch_max,
+                    engine_path=default_stockfish_path(),
+                ),
             },
             status_code=400,
         )
@@ -333,12 +360,13 @@ async def preview(
             "preview_token": token,
             "games": previews,
             "inline_warn": inline_warn,
-            "prefill": {
-                "platform": req_platform,
-                "lichess_user": lichess_user,
-                "chesscom_user": chesscom_user,
-                "fetch_max": fetch_max,
-            },
+            "prefill": _make_prefill(
+                platform=req_platform,
+                lichess_user=lichess_user,
+                chesscom_user=chesscom_user,
+                fetch_max=fetch_max,
+                engine_path=default_stockfish_path(),
+            ),
         },
     )
 
@@ -449,12 +477,16 @@ async def analyze(
                         "preview_token": preview_token,
                         "games": previews,
                         "inline_err": "請至少勾選 1 盤 (Select at least 1 game) 才能開始分析。",
-                        "prefill": {
-                            "platform": req_platform,
-                            "lichess_user": lichess_user,
-                            "chesscom_user": chesscom_user,
-                            "fetch_max": fetch_max,
-                        },
+                        "prefill": _make_prefill(
+                            platform=req_platform,
+                            lichess_user=lichess_user,
+                            chesscom_user=chesscom_user,
+                            fetch_max=fetch_max,
+                            player_name=player_name,
+                            engine_path=engine_path,
+                            time_per_move=time_per_move,
+                            max_plies=max_plies,
+                        ),
                     },
                     status_code=400,
                 )
@@ -485,12 +517,16 @@ async def analyze(
                     "preview_token": "",
                     "games": [],
                     "inline_err": "你選了 Lichess，但沒有輸入 Lichess username。",
-                    "prefill": {
-                        "platform": req_platform,
-                        "lichess_user": lichess_user,
-                        "chesscom_user": chesscom_user,
-                        "fetch_max": fetch_max,
-                    },
+                    "prefill": _make_prefill(
+                        platform=req_platform,
+                        lichess_user=lichess_user,
+                        chesscom_user=chesscom_user,
+                        fetch_max=fetch_max,
+                        player_name=player_name,
+                        engine_path=engine_path,
+                        time_per_move=time_per_move,
+                        max_plies=max_plies,
+                    ),
                 },
                 status_code=400,
             )
@@ -506,12 +542,16 @@ async def analyze(
                     "preview_token": "",
                     "games": [],
                     "inline_err": "你選了 Chess.com，但沒有輸入 Chess.com username。",
-                    "prefill": {
-                        "platform": req_platform,
-                        "lichess_user": lichess_user,
-                        "chesscom_user": chesscom_user,
-                        "fetch_max": fetch_max,
-                    },
+                    "prefill": _make_prefill(
+                        platform=req_platform,
+                        lichess_user=lichess_user,
+                        chesscom_user=chesscom_user,
+                        fetch_max=fetch_max,
+                        player_name=player_name,
+                        engine_path=engine_path,
+                        time_per_move=time_per_move,
+                        max_plies=max_plies,
+                    ),
                 },
                 status_code=400,
             )

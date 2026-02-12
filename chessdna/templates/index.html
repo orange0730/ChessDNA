@@ -202,7 +202,7 @@
           <div>
             <div class="row">
               <label>玩家名稱（用來比對 PGN 的 White/Black）</label>
-              <input type="text" name="player_name" placeholder="例：orange0730" />
+              <input type="text" name="player_name" placeholder="例：orange0730" value="{{ (prefill.player_name if prefill is defined else '') }}" />
               <div class="hint">如果你想看「這個玩家」的統計就填；留空也可（會顯示全部）。</div>
             </div>
 
@@ -277,19 +277,19 @@
               <div class="cardBody">
                 <div class="row">
                   <label>Stockfish 路徑</label>
-                  <input type="text" name="engine_path" value="{{ default_engine }}" />
+                  <input type="text" name="engine_path" value="{{ (prefill.engine_path if prefill is defined and prefill.engine_path is defined and prefill.engine_path else default_engine) }}" />
                   <div class="hint">可用環境變數 <code>STOCKFISH_PATH</code> 覆蓋預設。</div>
                 </div>
 
                 <div class="row">
                   <label>每步思考時間（秒）</label>
-                  <input type="number" name="time_per_move" step="0.01" min="0.01" value="{{ default_time }}" />
+                  <input type="number" name="time_per_move" step="0.01" min="0.01" value="{{ (prefill.time_per_move if prefill is defined and prefill.time_per_move is defined else default_time) }}" />
                   <div class="hint">建議 0.05～0.10 秒；要更準就調大。</div>
                 </div>
 
                 <div class="row">
                   <label>最多分析 plies</label>
-                  <input type="number" name="max_plies" step="1" min="10" value="200" />
+                  <input type="number" name="max_plies" step="1" min="10" value="{{ (prefill.max_plies if prefill is defined and prefill.max_plies is defined else 200) }}" />
                   <div class="hint">太大會變很久；MVP 先用 200。</div>
                 </div>
 

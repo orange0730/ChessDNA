@@ -77,3 +77,41 @@ def test_preview_returns_token_and_game_list(monkeypatch):
 
     assert len(previews) == 2
     assert len(games) == 2
+
+
+def test_preview_keeps_user_settings_in_form(monkeypatch):
+    # Preview is a UX step; it should not reset engine/time/max/player settings.
+    import chessdna.core.lichess as lichess
+
+    def fake_fetch(user: str, max_games: int = 10) -> str:
+        return SAMPLE_PGN
+
+    monkeypatch.setattr(lichess, "fetch_user_games_pgn", fake_fetch)
+
+    c = TestClient(app)
+    r = c.post(
+        "/preview",
+        data={
+            "platform": "lichess",
+            "lichess_user": "someone",
+            "fetch_max": "2",
+            "player_name": "orange0730",
+            "engine_path": "C:/sf.exe",
+            "time_per_move": "0.07",
+            "max_plies": "321",
+        },
+    )
+    assert r.status_code == 200
+
+    assert "name=\"player_name\"" in r.text
+    assert "value=\"orange0730\"" in r.text
+
+    assert "name=\"engine_path\"" in r.text
+    assert "value=\"C:/sf.exe\"" in r.text
+
+    # Jinja may render float without preserving the exact formatting.
+    m = re.search(r"name=\"time_per_move\".*?value=\"([^\"]+)\"", r.text, flags=re.S)
+    assert m, "time_per_move input not found"
+    assert m.group(1).startswith("0.07")
+
+    assert re.search(r"name=\"max_plies\".*?value=\"321\"", r.text, flags=re.S)

@@ -198,6 +198,11 @@ async def preview(
     lichess_user: str = Form(""),
     chesscom_user: str = Form(""),
     fetch_max: int = Form(10),
+    # Keep user settings when running the preview step (UX).
+    player_name: str = Form(""),
+    engine_path: str = Form(default_stockfish_path()),
+    time_per_move: str = Form("0.05"),
+    max_plies: str = Form("200"),
 ):
     """Fetch recent games and show a selectable list (MVP UX step)."""
 
@@ -218,6 +223,23 @@ async def preview(
     except Exception:
         # raw_fetch_max might be non-numeric; keep quiet.
         pass
+
+    player_name = (player_name or "").strip()
+    engine_path = (engine_path or "").strip() or default_stockfish_path()
+
+    # Accept numbers as strings (preview is just a UX step; don't 422 on bad input).
+    try:
+        time_per_move_f = float(time_per_move)
+    except Exception:
+        time_per_move_f = 0.05
+    try:
+        max_plies_i = int(max_plies)
+    except Exception:
+        max_plies_i = 200
+
+    time_per_move_f, max_plies_i, warn2 = _clamp_analyze_settings(time_per_move_f, max_plies_i)
+    if warn2:
+        inline_warn = (inline_warn + "；" if inline_warn else "") + warn2
 
     req_platform = (platform or "auto").strip().lower()
     if req_platform not in ("auto", "lichess", "chesscom"):
@@ -242,7 +264,10 @@ async def preview(
                     lichess_user=lichess_user,
                     chesscom_user=chesscom_user,
                     fetch_max=fetch_max,
-                    engine_path=default_stockfish_path(),
+                    player_name=player_name,
+                    engine_path=engine_path,
+                    time_per_move=time_per_move_f,
+                    max_plies=max_plies_i,
                 ),
             },
             status_code=400,
@@ -265,7 +290,10 @@ async def preview(
                     lichess_user=lichess_user,
                     chesscom_user=chesscom_user,
                     fetch_max=fetch_max,
-                    engine_path=default_stockfish_path(),
+                    player_name=player_name,
+                    engine_path=engine_path,
+                    time_per_move=time_per_move_f,
+                    max_plies=max_plies_i,
                 ),
             },
             status_code=400,
@@ -288,7 +316,10 @@ async def preview(
                     lichess_user=lichess_user,
                     chesscom_user=chesscom_user,
                     fetch_max=fetch_max,
-                    engine_path=default_stockfish_path(),
+                    player_name=player_name,
+                    engine_path=engine_path,
+                    time_per_move=time_per_move_f,
+                    max_plies=max_plies_i,
                 ),
             },
             status_code=400,
@@ -365,7 +396,10 @@ async def preview(
                 lichess_user=lichess_user,
                 chesscom_user=chesscom_user,
                 fetch_max=fetch_max,
-                engine_path=default_stockfish_path(),
+                player_name=player_name,
+                engine_path=engine_path,
+                time_per_move=time_per_move_f,
+                max_plies=max_plies_i,
             ),
         },
     )

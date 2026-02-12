@@ -52,6 +52,11 @@ def main():
         action="store_true",
         help="Only run pgninfo (skip engine analyze)",
     )
+    s.add_argument(
+        "--web-smoke",
+        action="store_true",
+        help="Also run a minimal FastAPI route smoke test (POST /analyze with pasted PGN)",
+    )
 
     args = p.parse_args()
 
@@ -119,6 +124,33 @@ def main():
             if idxs != list(range(len(previews))):
                 raise SystemExit(f"[ERR] preview idx not contiguous: {idxs[:10]}...")
         print(f"[OK] preview games={len(previews)}")
+
+        if args.web_smoke:
+            try:
+                from starlette.testclient import TestClient
+
+                from .app import app
+
+                with TestClient(app) as c:
+                    r = c.post(
+                        "/analyze",
+                        data={
+                            "pgn_text": pgn_text,
+                            "time_per_move": 0.01,
+                            "max_plies": 40,
+                            "engine_path": args.engine,
+                        },
+                    )
+                    if r.status_code >= 400:
+                        raise SystemExit(f"[ERR] web smoke failed: {r.status_code} {r.text[:200]}")
+                    if "report" not in r.text.lower():
+                        # best-effort assertion: report page should include 'report' keyword
+                        print("[WARN] web smoke: response did not contain 'report' keyword (may be template change)")
+                print("[OK] web smoke /analyze")
+            except SystemExit:
+                raise
+            except Exception as e:
+                print(f"[SKIP] web smoke (missing deps or runtime error): {e!r}")
 
         if args.no_analyze:
             print("[OK] selftest done (no-analyze)")

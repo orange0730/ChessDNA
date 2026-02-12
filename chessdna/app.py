@@ -73,6 +73,7 @@ def index(request: Request):
 @app.post("/preview", response_class=HTMLResponse)
 async def preview(
     request: Request,
+    platform: str = Form("auto"),
     lichess_user: str = Form(""),
     chesscom_user: str = Form(""),
     fetch_max: int = Form(10),
@@ -88,19 +89,64 @@ async def preview(
         fetch_max = 10
     fetch_max = max(1, min(fetch_max, 50))
 
+    req_platform = (platform or "auto").strip().lower()
+    if req_platform not in ("auto", "lichess", "chesscom"):
+        req_platform = "auto"
+
+    # If user explicitly selects a platform, require its username.
+    if req_platform == "lichess" and not lichess_user:
+        return TEMPLATES.TemplateResponse(
+            "index.html",
+            {
+                "request": request,
+                "default_engine": default_stockfish_path(),
+                "default_time": 0.05,
+                "preview_token": "",
+                "games": [],
+                "inline_err": "你選了 Lichess，但沒有輸入 Lichess username。",
+                "prefill": {
+                    "platform": req_platform,
+                    "lichess_user": lichess_user,
+                    "chesscom_user": chesscom_user,
+                    "fetch_max": fetch_max,
+                },
+            },
+            status_code=400,
+        )
+
+    if req_platform == "chesscom" and not chesscom_user:
+        return TEMPLATES.TemplateResponse(
+            "index.html",
+            {
+                "request": request,
+                "default_engine": default_stockfish_path(),
+                "default_time": 0.05,
+                "preview_token": "",
+                "games": [],
+                "inline_err": "你選了 Chess.com，但沒有輸入 Chess.com username。",
+                "prefill": {
+                    "platform": req_platform,
+                    "lichess_user": lichess_user,
+                    "chesscom_user": chesscom_user,
+                    "fetch_max": fetch_max,
+                },
+            },
+            status_code=400,
+        )
+
     src = ""
-    platform = ""
+    used_platform = ""
     try:
-        if lichess_user:
+        if req_platform == "lichess" or (req_platform == "auto" and lichess_user):
             from .core.lichess import fetch_user_games_pgn as fetch_lichess
 
             src = fetch_lichess(lichess_user, max_games=fetch_max).strip()
-            platform = "lichess"
-        elif chesscom_user:
+            used_platform = "lichess"
+        elif req_platform == "chesscom" or (req_platform == "auto" and chesscom_user):
             from .core.chesscom import fetch_user_games_pgn as fetch_chesscom
 
             src = fetch_chesscom(chesscom_user, max_games=fetch_max).strip()
-            platform = "chesscom"
+            used_platform = "chesscom"
     except Exception as e:
         import traceback
 
@@ -134,7 +180,7 @@ async def preview(
     previews, raw_games = preview_games(src, max_games=fetch_max)
 
     token = uuid.uuid4().hex
-    FETCH_STORE[token] = {"platform": platform, "previews": previews, "games": raw_games}
+    FETCH_STORE[token] = {"platform": used_platform, "previews": previews, "games": raw_games}
 
     # Persist raw PGN for best-effort reload after restart.
     try:
@@ -151,6 +197,7 @@ async def preview(
             "preview_token": token,
             "games": previews,
             "prefill": {
+                "platform": req_platform,
                 "lichess_user": lichess_user,
                 "chesscom_user": chesscom_user,
                 "fetch_max": fetch_max,
@@ -172,6 +219,7 @@ async def analyze(
     request: Request,
     pgn: UploadFile | None = File(None),
     pgn_text: str = Form(""),
+    platform: str = Form("auto"),
     lichess_user: str = Form(""),
     chesscom_user: str = Form(""),
     fetch_max: int = Form(10),
@@ -239,6 +287,10 @@ async def analyze(
     if not src:
         src = (pgn_text or "").strip()
 
+    req_platform = (platform or "auto").strip().lower()
+    if req_platform not in ("auto", "lichess", "chesscom"):
+        req_platform = "auto"
+
     lichess_user = (lichess_user or "").strip()
     chesscom_user = (chesscom_user or "").strip()
 
@@ -249,12 +301,12 @@ async def analyze(
         fetch_max = 10
     fetch_max = max(1, min(fetch_max, 50))
 
-    if not src and lichess_user:
+    if not src and req_platform in ("auto", "lichess") and lichess_user:
         from .core.lichess import fetch_user_games_pgn as fetch_lichess
 
         src = fetch_lichess(lichess_user, max_games=fetch_max).strip()
 
-    if not src and chesscom_user:
+    if not src and req_platform in ("auto", "chesscom") and chesscom_user:
         from .core.chesscom import fetch_user_games_pgn as fetch_chesscom
 
         src = fetch_chesscom(chesscom_user, max_games=fetch_max).strip()

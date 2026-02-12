@@ -396,26 +396,31 @@ async def analyze(
             src = "\n\n".join([c for c in chosen if c]).strip()
         else:
             # If user is in preview mode, require an explicit selection.
-            # Otherwise it is easy to accidentally re-fetch and analyze *all* games.
-            return TEMPLATES.TemplateResponse(
-                request,
-                "index.html",
-                {
-                    "request": request,
-                    "default_engine": default_stockfish_path(),
-                    "default_time": 0.05,
-                    "preview_token": preview_token,
-                    "games": previews,
-                    "inline_err": "請至少勾選 1 盤 (Select at least 1 game) 才能開始分析。",
-                    "prefill": {
-                        "platform": req_platform,
-                        "lichess_user": lichess_user,
-                        "chesscom_user": chesscom_user,
-                        "fetch_max": fetch_max,
+            # Otherwise it is easy to accidentally analyze *all* fetched games.
+            #
+            # However: if the user also provided an uploaded file or pasted PGN text,
+            # we should allow that path to proceed (client-side JS already permits it).
+            has_fallback_pgn = bool((pgn_text or "").strip()) or (pgn is not None)
+            if not has_fallback_pgn:
+                return TEMPLATES.TemplateResponse(
+                    request,
+                    "index.html",
+                    {
+                        "request": request,
+                        "default_engine": default_stockfish_path(),
+                        "default_time": 0.05,
+                        "preview_token": preview_token,
+                        "games": previews,
+                        "inline_err": "請至少勾選 1 盤 (Select at least 1 game) 才能開始分析。",
+                        "prefill": {
+                            "platform": req_platform,
+                            "lichess_user": lichess_user,
+                            "chesscom_user": chesscom_user,
+                            "fetch_max": fetch_max,
+                        },
                     },
-                },
-                status_code=400,
-            )
+                    status_code=400,
+                )
 
     if not src:
         src = (pgn_text or "").strip()

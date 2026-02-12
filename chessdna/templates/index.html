@@ -158,6 +158,7 @@
     <form class="card" action="/analyze" method="post" enctype="multipart/form-data" onsubmit="return onSubmit(event);">
       <div class="cardHead"><strong>Analyze PGN</strong> <span class="small">（檔案 / 貼上 / 線上抓取 擇一）</span></div>
       <div class="cardBody">
+        <div id="inlineWarn" style="{% if inline_warn %}display:block{% else %}display:none{% endif %};margin:0 0 12px;padding:10px 12px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.10);border-radius:12px;color:#fde68a;">{{ inline_warn or '' }}</div>
         <div id="inlineErr" style="{% if inline_err %}display:block{% else %}display:none{% endif %};margin:0 0 12px;padding:10px 12px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.10);border-radius:12px;color:#fecaca;">{{ inline_err or '' }}</div>
         <div class="grid">
           <div>

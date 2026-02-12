@@ -136,11 +136,20 @@ async def preview(
     lichess_user = (lichess_user or "").strip()
     chesscom_user = (chesscom_user or "").strip()
 
+    raw_fetch_max = fetch_max
     try:
         fetch_max = int(fetch_max)
     except Exception:
         fetch_max = 10
     fetch_max = max(1, min(fetch_max, 50))
+
+    inline_warn = ""
+    try:
+        if int(raw_fetch_max) != int(fetch_max):
+            inline_warn = f"fetch_max 已限制為 {fetch_max}（MVP 安全上限 50）"
+    except Exception:
+        # raw_fetch_max might be non-numeric; keep quiet.
+        pass
 
     req_platform = (platform or "auto").strip().lower()
     if req_platform not in ("auto", "lichess", "chesscom"):
@@ -156,6 +165,7 @@ async def preview(
                 "default_time": 0.05,
                 "preview_token": "",
                 "games": [],
+                "inline_warn": inline_warn,
                 "inline_err": "你選了 Lichess，但沒有輸入 Lichess username。",
                 "prefill": {
                     "platform": req_platform,
@@ -176,6 +186,7 @@ async def preview(
                 "default_time": 0.05,
                 "preview_token": "",
                 "games": [],
+                "inline_warn": inline_warn,
                 "inline_err": "你選了 Chess.com，但沒有輸入 Chess.com username。",
                 "prefill": {
                     "platform": req_platform,
@@ -249,6 +260,7 @@ async def preview(
             "default_time": 0.05,
             "preview_token": token,
             "games": previews,
+            "inline_warn": inline_warn,
             "prefill": {
                 "platform": req_platform,
                 "lichess_user": lichess_user,

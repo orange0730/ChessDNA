@@ -35,8 +35,8 @@
     .cardHead strong{font-size:14px;}
     .cardBody{padding:16px;}
 
-    input,button,textarea{font-size:14px;}
-    input,textarea{
+    input,button,textarea,select{font-size:14px;}
+    input,textarea,select{
       width:100%;
       background:rgba(15,23,42,.65);
       color:var(--text);
@@ -45,7 +45,7 @@
       padding:10px 12px;
       outline:none;
     }
-    input:focus,textarea:focus{border-color:rgba(96,165,250,.55);box-shadow:0 0 0 3px rgba(96,165,250,.15)}
+    input:focus,textarea:focus,select:focus{border-color:rgba(96,165,250,.55);box-shadow:0 0 0 3px rgba(96,165,250,.15)}
     textarea{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;}
 
     .grid{display:grid;grid-template-columns:1fr;gap:14px;}
@@ -149,15 +149,15 @@
         const hasCcom = ccom && ccom.value && ccom.value.trim().length>0;
 
         if(pf === 'lichess' && !hasLich){
-          showInlineError('你選了 Lichess，請先輸入 Lichess username。');
+          showInlineError('你選了 Lichess，請輸入 Lichess username。');
           return false;
         }
         if(pf === 'chesscom' && !hasCcom){
-          showInlineError('你選了 Chess.com，請先輸入 Chess.com username。');
+          showInlineError('你選了 Chess.com，請輸入 Chess.com username。');
           return false;
         }
         if(pf === 'auto' && !hasLich && !hasCcom){
-          showInlineError('要列出對局，請先輸入 Lichess 或 Chess.com username。');
+          showInlineError('要抓對局，請至少輸入一個 Lichess 或 Chess.com username。');
           return false;
         }
 
@@ -166,19 +166,19 @@
       }
 
       if(!hasFile && !hasText && !hasOnline && !(hasPreview && hasSelection)){
-        showInlineError('請上傳 PGN 檔、貼上 PGN 文字，或輸入 Lichess/Chess.com username 後再送出。');
+        showInlineError('請上傳 PGN 檔、貼上 PGN 文字，或輸入 Lichess/Chess.com username 後先按「抓出對局」。');
         return false;
       }
 
       if(hasPreview && !hasSelection && !hasFile && !hasText){
-        showInlineError('你目前在「線上抓棋譜預覽」模式，但尚未勾選任何對局；請至少勾選 1 盤再開始分析。');
+        showInlineError('你目前在「線上棋譜預覽」模式，但沒有勾選任何對局；請至少勾選 1 盤。');
         return false;
       }
 
       showInlineError('');
       const btn=document.getElementById('submitBtn');
       btn.disabled=true;
-      btn.textContent='分析中…（請稍等）';
+      btn.textContent='分析中…請稍等';
       return true;
     }
   </script>
@@ -188,55 +188,55 @@
     <div class="header">
       <div class="brand">
         <h1>ChessDNA</h1>
-        <p>丟 PGN 進來，ChessDNA 會用 Stockfish 算每步 CPL / accuracy，產出報告（MVP）。</p>
+        <p>輸入 PGN / 線上棋譜，使用 Stockfish 計算 CPL / accuracy 等指標，產生報告（MVP）。</p>
       </div>
-      <div class="pill">Tip: time_per_move 越大越準但越慢</div>
+      <div class="pill">Tip: time_per_move 越大越準，但會更慢</div>
     </div>
 
     <form class="card" action="/analyze" method="post" enctype="multipart/form-data" onsubmit="return onSubmit(event);">
-      <div class="cardHead"><strong>Analyze PGN</strong> <span class="small">（檔案 / 貼上 / 線上抓取 擇一）</span></div>
+      <div class="cardHead"><strong>Analyze PGN</strong> <span class="small">（上傳 / 貼上 / 線上抓棋譜）</span></div>
       <div class="cardBody">
         <div id="inlineWarn" style="{% if inline_warn %}display:block{% else %}display:none{% endif %};margin:0 0 12px;padding:10px 12px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.10);border-radius:12px;color:#fde68a;">{{ inline_warn or '' }}</div>
         <div id="inlineErr" style="{% if inline_err %}display:block{% else %}display:none{% endif %};margin:0 0 12px;padding:10px 12px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.10);border-radius:12px;color:#fecaca;">{{ inline_err or '' }}</div>
         <div class="grid">
           <div>
             <div class="row">
-              <label>玩家名稱（PGN 的 White/Black）</label>
-              <input type="text" name="player_name" placeholder="例如：orange0730" />
-              <div class="hint">用來產生「這個人的」統計與摘要（留空就先顯示雙方）。</div>
+              <label>玩家名稱（用來比對 PGN 的 White/Black）</label>
+              <input type="text" name="player_name" placeholder="例：orange0730" />
+              <div class="hint">如果你想看「這個玩家」的統計就填；留空也可（會顯示全部）。</div>
             </div>
 
             <div class="row">
-              <label>線上抓棋譜（可選）</label>
-              <div class="hint">先支援 Lichess / Chess.com：輸入 username 後抓最近 N 盤並分析（MVP 目前上限 50 盤）。</div>
+              <label>線上抓棋譜（MVP）</label>
+              <div class="hint">支援 Lichess / Chess.com：輸入 username 後先按「抓出對局」，再勾選要分析的對局。</div>
               <div style="display:grid;grid-template-columns:1fr;gap:10px;">
-                <select id="platformSel" name="platform" style="width:100%;background:rgba(15,23,42,.65);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:none;">
+                <select id="platformSel" name="platform">
                   {% set pf = (prefill.platform if prefill is defined and prefill.platform is defined else 'auto') %}
-                  <option value="auto" {% if pf=='auto' %}selected{% endif %}>平台：自動（有填 Lichess 就用 Lichess，否則 Chess.com）</option>
+                  <option value="auto" {% if pf=='auto' %}selected{% endif %}>平台：自動（填 Lichess 就用 Lichess，否則 Chess.com）</option>
                   <option value="lichess" {% if pf=='lichess' %}selected{% endif %}>平台：Lichess</option>
                   <option value="chesscom" {% if pf=='chesscom' %}selected{% endif %}>平台：Chess.com</option>
                 </select>
                 <div id="lichessUserWrap">
-                  <input id="lichessUser" type="text" name="lichess_user" placeholder="Lichess username（例如 orange_bot）" value="{{ (prefill.lichess_user if prefill is defined else '') }}" />
+                  <input id="lichessUser" type="text" name="lichess_user" placeholder="Lichess username（例：orange_bot）" value="{{ (prefill.lichess_user if prefill is defined else '') }}" />
                 </div>
                 <div id="chesscomUserWrap">
-                  <input id="chesscomUser" type="text" name="chesscom_user" placeholder="Chess.com username（例如 hikaru）" value="{{ (prefill.chesscom_user if prefill is defined else '') }}" />
+                  <input id="chesscomUser" type="text" name="chesscom_user" placeholder="Chess.com username（例：hikaru）" value="{{ (prefill.chesscom_user if prefill is defined else '') }}" />
                 </div>
                 <input type="number" name="fetch_max" step="1" min="1" max="50" value="{{ (prefill.fetch_max if prefill is defined else 10) }}" />
               </div>
-              <div class="hint">選「自動」時：同時填兩個會優先用 Lichess。</div>
+              <div class="hint">「自動」模式下：若兩個都填，優先使用 Lichess。</div>
               <div class="btnRow" style="margin-top:10px;">
-                <button id="previewBtn" class="btn" type="submit" formaction="/preview" formmethod="post">列出對局（勾選後再分析）</button>
-                <span class="small">先 preview 再 analyze，可避免一次把全部抓來直接跑。</span>
+                <button id="previewBtn" class="btn" type="submit" formaction="/preview" formmethod="post">抓出對局（勾選後再分析）</button>
+                <span class="small">也可不 preview，直接 Analyze（會把抓到的對局全部分析）。</span>
               </div>
             </div>
 
             {% if games and preview_token %}
             <div class="divider"></div>
             <div class="row">
-              <label>選擇要分析的對局</label>
+              <label>勾選要分析的對局</label>
               <input type="hidden" name="preview_token" value="{{ preview_token }}" />
-              <div class="hint">目前：列出最近抓到的對局（最多 {{ (prefill.fetch_max if prefill is defined else 50) }} 盤）。勾選後按右側「開始分析」。</div>
+              <div class="hint">目前顯示最近 {{ games|length }} 盤（上限 {{ (prefill.fetch_max if prefill is defined else 50) }}）。</div>
               <div class="btnRow" style="margin-top:10px;">
                 <button class="btn" type="button" onclick="selectAllGames();">全選</button>
                 <button class="btn" type="button" onclick="selectNoGames();">全不選</button>
@@ -262,12 +262,12 @@
             <div class="row">
               <label>PGN 上傳（檔案）</label>
               <input type="file" name="pgn" accept=".pgn,.txt" />
-              <div class="hint">如果你貼了下方 PGN 文字，會優先使用貼上的內容。</div>
+              <div class="hint">如果你也貼了下面的 PGN 文字，會優先使用貼上的內容。</div>
             </div>
 
             <div class="row">
               <label>PGN（貼上文字）</label>
-              <textarea name="pgn_text" rows="10" placeholder="貼上 PGN 內容…"></textarea>
+              <textarea name="pgn_text" rows="10" placeholder="貼上 PGN 內容"></textarea>
             </div>
           </div>
 
@@ -282,22 +282,22 @@
                 </div>
 
                 <div class="row">
-                  <label>每步分析時間（秒）</label>
+                  <label>每步思考時間（秒）</label>
                   <input type="number" name="time_per_move" step="0.01" min="0.01" value="{{ default_time }}" />
-                  <div class="hint">建議：0.05～0.10 秒先看結果；要更準再拉高。</div>
+                  <div class="hint">建議 0.05～0.10 秒；要更準就調大。</div>
                 </div>
 
                 <div class="row">
                   <label>最多分析 plies</label>
                   <input type="number" name="max_plies" step="1" min="10" value="200" />
-                  <div class="hint">避免太大導致等待過久。</div>
+                  <div class="hint">太大會變很久；MVP 先用 200。</div>
                 </div>
 
                 <div class="divider"></div>
 
                 <div class="btnRow">
                   <button id="submitBtn" class="btn btnPrimary" type="submit">開始分析</button>
-                  <span class="small">分析會花一點時間（取決於 plies × time_per_move）。</span>
+                  <span class="small">耗時取決於 plies 與 time_per_move。</span>
                 </div>
               </div>
             </div>
@@ -306,7 +306,7 @@
       </div>
     </form>
 
-    <p class="small" style="margin-top:12px;">本頁是 MVP：之後會加入 turning points 深度解釋、風格特徵與多盤總覽。下載連結目前存在暫存目錄與記憶體內，重啟伺服器後會失效。</p>
+    <p class="small" style="margin-top:12px;">MVP：報告/中繼資料會寫到系統 temp（帶 token 可在有限時間內下載）；伺服器重啟後可能失效。</p>
   </div>
 </body>
 </html>

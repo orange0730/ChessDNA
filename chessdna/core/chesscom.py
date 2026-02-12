@@ -1,15 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
-import requests
-
-
-def _get_json(url: str) -> Any:
-    r = requests.get(url, timeout=60, headers={"User-Agent": "ChessDNA/0.1"})
-    r.raise_for_status()
-    return r.json()
+from .http import get_json
 
 
 def fetch_user_games_pgn(username: str, *, max_games: int = 50) -> str:
@@ -20,7 +13,7 @@ def fetch_user_games_pgn(username: str, *, max_games: int = 50) -> str:
     """
     u = username.lower()
     archives_url = f"https://api.chess.com/pub/player/{u}/games/archives"
-    data = _get_json(archives_url)
+    data: Any = get_json(archives_url, headers={"User-Agent": "ChessDNA/0.1"}, max_retries=3)
     archives: list[str] = list(data.get("archives", []))
     if not archives:
         return ""
@@ -32,7 +25,7 @@ def fetch_user_games_pgn(username: str, *, max_games: int = 50) -> str:
     for a in archives:
         if len(pgns) >= max_games:
             break
-        month = _get_json(a)
+        month: Any = get_json(a, headers={"User-Agent": "ChessDNA/0.1"}, max_retries=3)
         games = month.get("games", [])
         # games already newest->oldest? not guaranteed; keep as provided.
         for g in games:

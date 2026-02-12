@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import requests
+from .http import get
 
 
 def fetch_user_games_pgn(username: str, *, max_games: int = 50) -> str:
@@ -14,7 +14,6 @@ def fetch_user_games_pgn(username: str, *, max_games: int = 50) -> str:
         "opening": "true",
         "moves": "true",
     }
-    headers = {"Accept": "application/x-chess-pgn"}
-    r = requests.get(url, params=params, headers=headers, timeout=60)
-    r.raise_for_status()
+    headers = {"Accept": "application/x-chess-pgn", "User-Agent": "ChessDNA/0.1"}
+    r = get(url, params=params, headers=headers, timeout=60, max_retries=3)
     return r.text

@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 import time
 import uuid
+import json
 
 import asyncio
 import anyio
@@ -51,7 +52,7 @@ async def lifespan(app: FastAPI):
         fetch_hours = 48.0
 
     _cleanup_tmp_dir(REPORT_TMP_DIR, max_age_hours=report_hours, suffixes=(".json", ".html"))
-    _cleanup_tmp_dir(FETCH_TMP_DIR, max_age_hours=fetch_hours, suffixes=(".pgn",))
+    _cleanup_tmp_dir(FETCH_TMP_DIR, max_age_hours=fetch_hours, suffixes=(".pgn", ".json"))
 
     yield
 
@@ -376,9 +377,21 @@ async def preview(
     token = uuid.uuid4().hex
     FETCH_STORE[token] = {"platform": used_platform, "previews": previews, "games": raw_games}
 
-    # Persist raw PGN for best-effort reload after restart.
+    # Persist raw PGN (+ minimal metadata) for best-effort reload after restart.
     try:
         (FETCH_TMP_DIR / f"{token}.pgn").write_text(src, encoding="utf-8")
+        (FETCH_TMP_DIR / f"{token}.json").write_text(
+            json.dumps(
+                {
+                    "platform": used_platform,
+                    "created_at": time.time(),
+                    "fetch_max": fetch_max,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
     except Exception:
         pass
 
@@ -466,7 +479,18 @@ async def analyze(
                     from .core.pgn_utils import preview_games
 
                     previews2, raw_games2 = preview_games(src2, max_games=fetch_max)
-                    store = {"platform": "", "previews": previews2, "games": raw_games2}
+
+                    # Also reload platform info if available.
+                    platform2 = ""
+                    try:
+                        meta_p = FETCH_TMP_DIR / f"{preview_token}.json"
+                        if meta_p.exists():
+                            meta = json.loads(meta_p.read_text(encoding="utf-8", errors="replace"))
+                            platform2 = str(meta.get("platform") or "").strip()
+                    except Exception:
+                        platform2 = ""
+
+                    store = {"platform": platform2, "previews": previews2, "games": raw_games2}
                     FETCH_STORE[preview_token] = store
             except Exception:
                 store = None

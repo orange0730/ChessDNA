@@ -311,6 +311,13 @@ async def analyze(
         fetch_max = 10
     fetch_max = max(1, min(fetch_max, 50))
 
+    req_platform = (platform or "auto").strip().lower()
+    if req_platform not in ("auto", "lichess", "chesscom"):
+        req_platform = "auto"
+
+    lichess_user = (lichess_user or "").strip()
+    chesscom_user = (chesscom_user or "").strip()
+
     src = ""
     if preview_token:
         store = FETCH_STORE.get(preview_token)
@@ -352,10 +359,26 @@ async def analyze(
                     chosen.append(str(games[i]).strip())
             src = "\n\n".join([c for c in chosen if c]).strip()
         else:
-            # If user has a preview_token but didn't select any games,
-            # don't hard-fail: allow fallback to other sources (pgn text / username / upload).
-            # We'll only error later if *all* sources are missing.
-            src = ""
+            # If user is in preview mode, require an explicit selection.
+            # Otherwise it is easy to accidentally re-fetch and analyze *all* games.
+            return TEMPLATES.TemplateResponse(
+                "index.html",
+                {
+                    "request": request,
+                    "default_engine": default_stockfish_path(),
+                    "default_time": 0.05,
+                    "preview_token": preview_token,
+                    "games": previews,
+                    "inline_err": "你目前在『線上抓棋譜預覽』模式：請至少勾選 1 盤對局後再按『開始分析』。",
+                    "prefill": {
+                        "platform": req_platform,
+                        "lichess_user": lichess_user,
+                        "chesscom_user": chesscom_user,
+                        "fetch_max": fetch_max,
+                    },
+                },
+                status_code=400,
+            )
 
     if not src:
         src = (pgn_text or "").strip()

@@ -132,8 +132,8 @@
         return false;
       }
 
-      if(hasPreview && !hasSelection && !hasFile && !hasText && !hasOnline){
-        showInlineError('你有進入「線上抓棋譜預覽」模式，但尚未勾選任何對局；或改用「貼上 PGN / 上傳檔案 / 直接輸入 username」再送出。');
+      if(hasPreview && !hasSelection && !hasFile && !hasText){
+        showInlineError('你目前在「線上抓棋譜預覽」模式，但尚未勾選任何對局；請至少勾選 1 盤再開始分析。');
         return false;
       }
 

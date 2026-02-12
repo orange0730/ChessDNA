@@ -12,7 +12,7 @@ def main():
     f = sub.add_parser("fetch", help="Fetch recent games from Lichess/Chess.com and save PGN")
     f.add_argument("--platform", choices=["lichess", "chesscom"], default="lichess")
     f.add_argument("--user", required=True)
-    f.add_argument("--max", type=int, default=50)
+    f.add_argument("--max", type=int, default=50, help="Max games to fetch (1~50; values outside will be clamped)")
     f.add_argument("--out", default="games.pgn")
 
     a = sub.add_parser("analyze", help="Analyze PGN(s) and output JSON report")
@@ -61,7 +61,11 @@ def main():
         else:
             from .core.chesscom import fetch_user_games_pgn as fetch
 
-        pgn = fetch(args.user, max_games=args.max)
+        max_games = max(1, min(int(args.max), 50))
+        if max_games != int(args.max):
+            print(f"[WARN] --max clamped to {max_games} (MVP safety limit)")
+
+        pgn = fetch(args.user, max_games=max_games)
         Path(args.out).write_text(pgn, encoding="utf-8")
         print(f"[OK] wrote {args.out}")
 

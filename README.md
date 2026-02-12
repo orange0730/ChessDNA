@@ -61,6 +61,9 @@ chessdna analyze --pgn games.pgn --engine D:\code\chess_train\stockfish\stockfis
 - Web UI 目前用 token / report_id 主要做「記憶體 mapping（in-memory）」
   - 伺服器重啟後 mapping 會清空
   - 但後端 best-effort 會把 PGN / 報告寫到系統 temp，所以下次帶著 token 仍可能在有效期內找得到（不保證）
+  - temp 自動清理（startup 時 best-effort）：
+    - 報告預設保留 7 天（可用 `CHESSDNA_REPORT_TMP_MAX_AGE_HOURS` 調整）
+    - 線上抓取 PGN 預設保留 48 小時（可用 `CHESSDNA_FETCH_TMP_MAX_AGE_HOURS` 調整）
 - 線上抓棋譜受 API / 網路影響
 - fetch_max 目前限制 1~50，避免一次拉太多造成 UI 等太久或伺服器卡住
 

@@ -78,6 +78,30 @@
       el.style.display = msg ? 'block' : 'none';
     }
 
+    function updateSelectedCount(){
+      const out = document.getElementById('selCount');
+      if(!out) return;
+      const n = document.querySelectorAll('input[name="game_idx"]:checked').length;
+      out.textContent = `${n} 盤已勾選`;
+    }
+
+    function selectAllGames(){
+      document.querySelectorAll('input[name="game_idx"]').forEach(cb => cb.checked = true);
+      updateSelectedCount();
+    }
+
+    function selectNoGames(){
+      document.querySelectorAll('input[name="game_idx"]').forEach(cb => cb.checked = false);
+      updateSelectedCount();
+    }
+
+    window.addEventListener('load', () => {
+      document.querySelectorAll('input[name="game_idx"]').forEach(cb => {
+        cb.addEventListener('change', updateSelectedCount);
+      });
+      updateSelectedCount();
+    });
+
     function onSubmit(ev){
       const file = document.querySelector('input[name="pgn"]');
       const text = document.querySelector('textarea[name="pgn_text"]');
@@ -164,6 +188,11 @@
               <label>選擇要分析的對局</label>
               <input type="hidden" name="preview_token" value="{{ preview_token }}" />
               <div class="hint">目前：列出最近抓到的對局（最多 {{ (prefill.fetch_max if prefill is defined else 50) }} 盤）。勾選後按右側「開始分析」。</div>
+              <div class="btnRow" style="margin-top:10px;">
+                <button class="btn" type="button" onclick="selectAllGames();">全選</button>
+                <button class="btn" type="button" onclick="selectNoGames();">全不選</button>
+                <span id="selCount" class="small"></span>
+              </div>
               <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px;">
                 {% for g in games %}
                 <label style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(15,23,42,.35);font-weight:500;">

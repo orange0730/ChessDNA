@@ -185,6 +185,7 @@ def index(request: Request):
             "default_engine": default_stockfish_path(),
             "default_time": 0.05,
             "preview_token": "",
+            "preview_platform": "",
             "games": [],
             "prefill": _make_prefill(engine_path=default_stockfish_path()),
         },
@@ -389,6 +390,7 @@ async def preview(
             "default_engine": default_stockfish_path(),
             "default_time": 0.05,
             "preview_token": token,
+            "preview_platform": used_platform,
             "games": previews,
             "inline_warn": inline_warn,
             "prefill": _make_prefill(
@@ -509,6 +511,7 @@ async def analyze(
                         "default_engine": default_stockfish_path(),
                         "default_time": 0.05,
                         "preview_token": preview_token,
+                        "preview_platform": str(store.get("platform") or ""),
                         "games": previews,
                         "inline_err": "請至少勾選 1 盤 (Select at least 1 game) 才能開始分析。",
                         "prefill": _make_prefill(

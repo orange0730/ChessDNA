@@ -236,7 +236,10 @@
             <div class="row">
               <label>勾選要分析的對局</label>
               <input type="hidden" name="preview_token" value="{{ preview_token }}" />
-              <div class="hint">目前顯示最近 {{ games|length }} 盤（上限 {{ (prefill.fetch_max if prefill is defined else 50) }}）。</div>
+              <div class="hint">
+                目前顯示最近 {{ games|length }} 盤（上限 {{ (prefill.fetch_max if prefill is defined else 50) }}）。
+                {% if preview_platform %}<span class="small">來源平台：{{ preview_platform }}</span>{% endif %}
+              </div>
               <div class="btnRow" style="margin-top:10px;">
                 <button class="btn" type="button" onclick="selectAllGames();">全選</button>
                 <button class="btn" type="button" onclick="selectNoGames();">全不選</button>

@@ -46,6 +46,7 @@ def test_analyze_requires_selection_when_using_preview_token():
 
     assert r.status_code == 400
     assert "Select at least 1 game" in r.text
+    assert "來源平台：lichess" in r.text
 
 
 def test_analyze_allows_pgn_text_even_if_preview_token_present():

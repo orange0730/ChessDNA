@@ -111,6 +111,12 @@
       <div class="small muted">debug json: <code>{{ debug_path }}</code></div>
     </div>
 
+    {% if inline_warn %}
+      <div style="margin:0 0 12px;padding:10px 12px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.10);border-radius:12px;color:#fde68a;">
+        {{ inline_warn }}
+      </div>
+    {% endif %}
+
     <div class="card" style="margin-bottom:14px;">
       <div class="cardHead">Run info</div>
       <div class="cardBody">

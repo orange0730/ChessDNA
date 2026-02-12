@@ -100,6 +100,43 @@ def _cleanup_tmp_dir(tmp_dir: Path, *, max_age_hours: float, suffixes: tuple[str
 
     return deleted
 
+
+def _clamp_analyze_settings(time_per_move: float, max_plies: int) -> tuple[float, int, str]:
+    """Clamp user-provided analyze settings to safe MVP ranges.
+
+    Returns (time_per_move, max_plies, warn_msg).
+
+    We intentionally clamp rather than hard-fail: the UI already provides
+    reasonable defaults, and clamping avoids accidental "hang" inputs.
+    """
+
+    warn: list[str] = []
+
+    # time_per_move: too small is pointless; too large can make web UI feel stuck.
+    try:
+        t = float(time_per_move)
+    except Exception:
+        t = 0.05
+        warn.append("time_per_move 非數字，已回復預設 0.05")
+
+    t2 = max(0.01, min(t, 1.0))
+    if t2 != t:
+        warn.append(f"time_per_move 已限制為 {t2:.2f}s（範圍 0.01~1.00）")
+
+    # max_plies: protect server from huge workloads (MVP).
+    try:
+        m = int(max_plies)
+    except Exception:
+        m = 200
+        warn.append("max_plies 非數字，已回復預設 200")
+
+    m2 = max(10, min(m, 800))
+    if m2 != m:
+        warn.append(f"max_plies 已限制為 {m2}（範圍 10~800）")
+
+    return t2, m2, "；".join(warn)
+
+
 # In-memory fetched PGN store (MVP). Maps token -> {"platform": str, "previews": [...], "games": [pgn_str...]}
 # Best-effort persistence: we also write the fetched concatenated PGN to a temp file
 # so the preview_token can sometimes survive a server restart.
@@ -508,6 +545,9 @@ async def analyze(
 
     player_name = player_name.strip() or None
 
+    # MVP stability: clamp potentially expensive settings.
+    time_per_move, max_plies, warn_msg = _clamp_analyze_settings(time_per_move, max_plies)
+
     try:
         # Run CPU/IO-heavy engine analysis in a worker thread to avoid
         # asyncio event-loop/subprocess quirks on Windows.
@@ -530,7 +570,15 @@ async def analyze(
 
         # Render HTML to string for download
         tpl = TEMPLATES.get_template("report.html")
-        html = tpl.render({"request": request, "report": report, "debug_path": json_path, "report_id": report_id})
+        html = tpl.render(
+            {
+                "request": request,
+                "report": report,
+                "debug_path": json_path,
+                "report_id": report_id,
+                "inline_warn": warn_msg,
+            }
+        )
         Path(html_path).write_text(html, encoding="utf-8")
 
         REPORT_STORE[report_id] = {"json": json_path, "html": html_path}
@@ -538,7 +586,13 @@ async def analyze(
         return TEMPLATES.TemplateResponse(
             request,
             "report.html",
-            {"request": request, "report": report, "debug_path": json_path, "report_id": report_id},
+            {
+                "request": request,
+                "report": report,
+                "debug_path": json_path,
+                "report_id": report_id,
+                "inline_warn": warn_msg,
+            },
         )
 
     except Exception as e:

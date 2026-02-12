@@ -67,6 +67,8 @@ chessdna analyze --pgn games.pgn --engine D:\code\chess_train\stockfish\stockfis
   - 線上抓到的 PGN 預設保留 48 小時，可用 `CHESSDNA_FETCH_TMP_MAX_AGE_HOURS` 調整
 - 線上抓棋譜受 API / 網路影響
 - fetch_max 限制 1~50，避免一次抓太多導致 UI 等太久或伺服器卡住
+- time_per_move 會 clamp 到 0.01~1.00 秒（太大會非常慢）
+- max_plies 會 clamp 到 10~800（太大會跑很久）
 
 ## Phase 2（發想）
 

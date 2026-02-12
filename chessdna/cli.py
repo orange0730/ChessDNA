@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 
 from .core.analyze import analyze_pgn_text
-from .core.pgn_utils import pgn_info
+from .core.pgn_utils import pgn_info, preview_games
 
 
 def main():
@@ -98,6 +98,8 @@ def main():
             raise SystemExit(f"[ERR] PGN not found: {pgn_path}")
 
         pgn_text = pgn_path.read_text(encoding="utf-8", errors="replace")
+
+        # 1) lightweight parse/summary
         info = pgn_info(pgn_text, max_games=50)
         print(
             "[OK] pgninfo games={g} plies_min={mn} plies_max={mx} plies_avg={avg}".format(
@@ -107,6 +109,16 @@ def main():
                 avg=(None if info.plies_avg is None else round(info.plies_avg, 2)),
             )
         )
+
+        # 2) ensure UI preview flow can parse headers and generate stable idx list
+        previews, raw_games = preview_games(pgn_text, max_games=50)
+        if len(previews) != len(raw_games):
+            raise SystemExit(f"[ERR] preview mismatch: previews={len(previews)} raw_games={len(raw_games)}")
+        if previews:
+            idxs = [g.idx for g in previews]
+            if idxs != list(range(len(previews))):
+                raise SystemExit(f"[ERR] preview idx not contiguous: {idxs[:10]}...")
+        print(f"[OK] preview games={len(previews)}")
 
         if args.no_analyze:
             print("[OK] selftest done (no-analyze)")

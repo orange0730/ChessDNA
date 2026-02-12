@@ -153,7 +153,8 @@ async def preview(
 def download(report_id: str, kind: str):
     if kind not in ("json", "html"):
         raise HTTPException(status_code=400, detail="kind must be json or html")
-    return download_file(REPORT_STORE, report_id, kind)
+    # Best-effort: after restart, REPORT_STORE is empty, but temp artifacts may still exist.
+    return download_file(REPORT_STORE, report_id, kind, fallback_dir=REPORT_TMP_DIR)
 
 
 @app.post("/analyze", response_class=HTMLResponse)

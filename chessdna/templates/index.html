@@ -179,7 +179,7 @@
                 </select>
                 <input type="text" name="lichess_user" placeholder="Lichess username（例如 orange_bot）" value="{{ (prefill.lichess_user if prefill is defined else '') }}" />
                 <input type="text" name="chesscom_user" placeholder="Chess.com username（例如 hikaru）" value="{{ (prefill.chesscom_user if prefill is defined else '') }}" />
-                <input type="number" name="fetch_max" step="1" min="1" value="{{ (prefill.fetch_max if prefill is defined else 10) }}" />
+                <input type="number" name="fetch_max" step="1" min="1" max="50" value="{{ (prefill.fetch_max if prefill is defined else 10) }}" />
               </div>
               <div class="hint">選「自動」時：同時填兩個會優先用 Lichess。</div>
               <div class="btnRow" style="margin-top:10px;">

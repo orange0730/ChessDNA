@@ -21,11 +21,15 @@ pip install -e .
 
 ### CLI
 ```powershell
+# (option A) use installed console script
 # fetch PGN from lichess
 chessdna fetch --platform lichess --user orange_bot --max 10 --out games.pgn
 
 # fetch PGN from chess.com
 chessdna fetch --platform chesscom --user hikaru --max 10 --out games_chesscom.pgn
+
+# (option B) run via python -m (no console script required)
+python -m chessdna pgninfo --pgn games.pgn --max-games 200
 
 # quick validate/summarize PGN (no engine required)
 chessdna pgninfo --pgn games.pgn --max-games 200

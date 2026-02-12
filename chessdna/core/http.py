@@ -36,7 +36,15 @@ def get(
             if r.status_code in retry_statuses and attempt < max_retries:
                 # Honor Retry-After when provided.
                 ra = r.headers.get("Retry-After")
-                sleep_s = float(ra) if ra and ra.isdigit() else backoff_seconds * (2**attempt)
+                sleep_s: float | None = None
+                if ra:
+                    try:
+                        # Usually seconds (e.g. "2"), sometimes can be non-int.
+                        sleep_s = float(ra)
+                    except ValueError:
+                        sleep_s = None
+                if sleep_s is None:
+                    sleep_s = backoff_seconds * (2**attempt)
                 time.sleep(min(sleep_s, 10.0))
                 continue
             r.raise_for_status()

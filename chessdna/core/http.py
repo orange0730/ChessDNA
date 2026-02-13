@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Callable
+from typing import Any
 
 import requests
+
+from chessdna import __version__
 
 
 class FetchError(RuntimeError):
@@ -27,6 +29,12 @@ def get(
 
     if retry_statuses is None:
         retry_statuses = {429, 500, 502, 503, 504}
+
+    # Some public APIs are picky about User-Agent; set a sane default.
+    if headers is None:
+        headers = {}
+    if "User-Agent" not in headers:
+        headers["User-Agent"] = f"ChessDNA/{__version__}"
 
     last_exc: Exception | None = None
 

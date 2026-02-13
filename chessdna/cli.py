@@ -35,6 +35,11 @@ def main():
     )
     a.add_argument("--t", type=float, default=0.05, help="Time per move (seconds)")
     a.add_argument("--max-plies", type=int, default=200)
+    a.add_argument(
+        "--player",
+        default="",
+        help="Optional player name to compute per-player stats (matches PGN White/Black exactly)",
+    )
     a.add_argument("--out", default="report.json")
 
     i = sub.add_parser("pgninfo", help="Validate/summarize PGN without engine")
@@ -111,11 +116,13 @@ def main():
         pgn_text = Path(args.pgn).read_text(encoding="utf-8", errors="replace")
         raw_t = args.t
         raw_mx = args.max_plies
+        player = (args.player or "").strip() or None
         report = analyze_pgn_text(
             pgn_text,
             engine_path=args.engine,
             time_per_move=raw_t,
             max_plies=raw_mx,
+            player_name=player,
         )
         if float(report.time_per_move) != float(raw_t):
             print(f"[WARN] --t clamped to {report.time_per_move} (MVP safety limit)")

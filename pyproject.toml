@@ -19,6 +19,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0",
+  # For FastAPI/Starlette TestClient used in web smoke tests
+  "httpx>=0.27.0",
 ]
 
 [project.scripts]

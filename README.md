@@ -51,6 +51,9 @@ chessdna selftest --pgn _sample_orange_bot.pgn
 
 # analyze PGN with Stockfish
 chessdna analyze --pgn games.pgn --engine D:\code\chess_train\stockfish\stockfish-windows-x86-64-avx2.exe --t 0.05 --max-plies 200 --out report.json
+
+# analyze + compute per-player stats (match PGN [White]/[Black] exactly)
+chessdna analyze --pgn games.pgn --player orange_bot --engine D:\code\chess_train\stockfish\stockfish-windows-x86-64-avx2.exe --t 0.05 --max-plies 200 --out report_player.json
 ```
 
 ## Web UX：線上對局（MVP 流程）

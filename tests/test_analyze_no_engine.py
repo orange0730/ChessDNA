@@ -31,3 +31,15 @@ def test_analyze_degrades_gracefully_without_engine(tmp_path):
     assert g.plies[0].cpl is None
     assert g.avg_cpl_white is None
     assert g.accuracy_white is None
+
+
+def test_analyze_clamps_inputs_like_web_settings(tmp_path):
+    report = analyze_pgn_text(
+        SAMPLE_PGN,
+        engine_path=str(tmp_path / "__missing_stockfish__"),
+        time_per_move=999,
+        max_plies=999999,
+    )
+
+    assert report.time_per_move == 1.0
+    assert report.max_plies == 800

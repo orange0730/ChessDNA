@@ -104,13 +104,13 @@ def analyze_pgn_text(
         time_per_move = float(time_per_move)
     except Exception:
         time_per_move = 0.05
-    time_per_move = max(0.01, min(time_per_move, 2.0))
+    time_per_move = max(0.01, min(time_per_move, 1.0))
 
     try:
         max_plies = int(max_plies)
     except Exception:
         max_plies = 200
-    max_plies = max(10, min(max_plies, 2000))
+    max_plies = max(10, min(max_plies, 800))
 
     pgn_io = StringIO(pgn_text)
 

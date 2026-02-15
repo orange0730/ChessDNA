@@ -90,3 +90,11 @@ chessdna analyze --pgn games.pgn --player orange_bot --engine D:\code\chess_trai
 ## Dev
 
 - Python 3.11+（目前環境 3.13 也可）
+
+### Run tests
+
+```powershell
+cd D:\code\ChessDNA
+pip install -e ".[dev]"
+pytest -q
+```

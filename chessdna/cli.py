@@ -1,5 +1,7 @@
 import argparse
+import json
 import os
+from dataclasses import asdict
 from pathlib import Path
 
 from . import __version__
@@ -45,6 +47,11 @@ def main():
     i = sub.add_parser("pgninfo", help="Validate/summarize PGN without engine")
     i.add_argument("--pgn", required=True, help="Path to PGN file")
     i.add_argument("--max-games", type=int, default=200)
+    i.add_argument(
+        "--json",
+        action="store_true",
+        help="Print machine-readable JSON to stdout",
+    )
 
     s = sub.add_parser(
         "selftest",
@@ -134,6 +141,11 @@ def main():
     elif args.cmd == "pgninfo":
         pgn_text = Path(args.pgn).read_text(encoding="utf-8", errors="replace")
         info = pgn_info(pgn_text, max_games=args.max_games)
+
+        if args.json:
+            print(json.dumps(asdict(info), ensure_ascii=False))
+            return
+
         print(
             "[OK] games={g} plies_min={mn} plies_max={mx} plies_avg={avg}".format(
                 g=info.games,

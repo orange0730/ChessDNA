@@ -112,7 +112,7 @@ def main():
         Path(args.out).write_text(pgn, encoding="utf-8")
         print(f"[OK] wrote {args.out}")
 
-    if args.cmd == "analyze":
+    elif args.cmd == "analyze":
         pgn_text = Path(args.pgn).read_text(encoding="utf-8", errors="replace")
         raw_t = args.t
         raw_mx = args.max_plies
@@ -131,7 +131,7 @@ def main():
         Path(args.out).write_text(report.model_dump_json(indent=2), encoding="utf-8")
         print(f"[OK] wrote {args.out}")
 
-    if args.cmd == "pgninfo":
+    elif args.cmd == "pgninfo":
         pgn_text = Path(args.pgn).read_text(encoding="utf-8", errors="replace")
         info = pgn_info(pgn_text, max_games=args.max_games)
         print(
@@ -143,7 +143,7 @@ def main():
             )
         )
 
-    if args.cmd == "selftest":
+    elif args.cmd == "selftest":
         pgn_path = Path(args.pgn)
         if not pgn_path.exists():
             raise SystemExit(f"[ERR] PGN not found: {pgn_path}")

@@ -49,6 +49,10 @@ chessdna pgninfo --pgn games.pgn --max-games 200
 # - if Stockfish path is missing, it will auto-skip analyze
 chessdna selftest --pgn _sample_orange_bot.pgn
 
+# optional: include minimal web route smoke tests (requires dev deps)
+# pip install -e ".[dev]"
+chessdna selftest --pgn _sample_orange_bot.pgn --web-smoke
+
 # analyze PGN with Stockfish
 chessdna analyze --pgn games.pgn --engine D:\code\chess_train\stockfish\stockfish-windows-x86-64-avx2.exe --t 0.05 --max-plies 200 --out report.json
 

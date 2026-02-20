@@ -14,7 +14,8 @@ dist/
 build/
 
 # reports / samples
-*.json
+_report*.json
+_selftest*.json
 # (keep templates/*.html tracked)
 
 _sample_*.pgn

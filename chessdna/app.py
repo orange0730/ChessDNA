@@ -18,6 +18,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 
 from .core.analyze import analyze_pgn_text
+from .core.settings import default_stockfish_path
 from .routes_downloads import download_file
 
 
@@ -27,14 +28,6 @@ if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
     except Exception:
         pass
-
-
-def default_stockfish_path() -> str:
-    # Reasonable default for this machine; can be overridden by env var.
-    return os.environ.get(
-        "STOCKFISH_PATH",
-        r"D:\code\chess_train\stockfish\stockfish-windows-x86-64-avx2.exe",
-    )
 
 
 @asynccontextmanager
@@ -555,14 +548,7 @@ async def analyze(
     if not src:
         src = (pgn_text or "").strip()
 
-    req_platform = (platform or "auto").strip().lower()
-    if req_platform not in ("auto", "lichess", "chesscom"):
-        req_platform = "auto"
-
-    lichess_user = (lichess_user or "").strip()
-    chesscom_user = (chesscom_user or "").strip()
-
-    # (fetch_max already clamped above)
+    # req_platform, lichess_user, chesscom_user already normalized above.
 
     # If user explicitly selects a platform, require its username.
     # (Client-side JS already blocks this, but we also guard server-side.)

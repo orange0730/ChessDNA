@@ -7,14 +7,7 @@ from pathlib import Path
 from . import __version__
 from .core.analyze import analyze_pgn_text
 from .core.pgn_utils import pgn_info, preview_games
-
-
-def default_stockfish_path() -> str:
-    # Keep consistent with web app; overridable by env var.
-    return os.environ.get(
-        "STOCKFISH_PATH",
-        r"D:\code\chess_train\stockfish\stockfish-windows-x86-64-avx2.exe",
-    )
+from .core.settings import default_stockfish_path
 
 
 def main():

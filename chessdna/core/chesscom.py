@@ -27,7 +27,8 @@ def fetch_user_games_pgn(username: str, *, max_games: int = 50) -> str:
             break
         month: Any = get_json(a, headers={"User-Agent": "ChessDNA/0.1"}, max_retries=3)
         games = month.get("games", [])
-        # games already newest->oldest? not guaranteed; keep as provided.
+        # Sort newest-first by end_time when available.
+        games = sorted(games, key=lambda g: g.get("end_time", 0), reverse=True)
         for g in games:
             if len(pgns) >= max_games:
                 break

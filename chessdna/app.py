@@ -12,7 +12,7 @@ from functools import partial
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
@@ -167,6 +167,19 @@ def _make_prefill(
         "time_per_move": time_per_move,
         "max_plies": max_plies,
     }
+
+
+
+
+@app.get("/sw.js", include_in_schema=False)
+def service_worker():
+    """Serve service worker from root so it can control the full site scope."""
+    sw_path = BASE_DIR / "static" / "sw.js"
+    return FileResponse(
+        str(sw_path),
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"},
+    )
 
 
 @app.get("/", response_class=HTMLResponse)

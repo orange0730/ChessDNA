@@ -19,3 +19,8 @@ _selftest*.json
 # (keep templates/*.html tracked)
 
 _sample_*.pgn
+
+# chessdna-mobile
+chessdna-mobile/node_modules/
+chessdna-mobile/.expo/
+chessdna-mobile/dist/

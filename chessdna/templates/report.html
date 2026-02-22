@@ -1,257 +1,708 @@
 <!doctype html>
 <html lang="zh-Hant">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ChessDNA Report</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/static/manifest.json" />
+  <meta name="theme-color" content="#0b0f19" />
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ChessDNA" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+
   <style>
-    :root{
-      --bg:#0b0f19;
-      --card:#111827;
-      --card2:#0f172a;
-      --text:#e5e7eb;
-      --muted:#9ca3af;
-      --line:rgba(255,255,255,.08);
-      --accent:#60a5fa;
-      --bad:#fb7185;
-      --warn:#fbbf24;
-      --ok:#34d399;
+    :root {
+      --bg: #0b0f19;
+      --card: #111827;
+      --card2: #0f172a;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --line: rgba(255, 255, 255, .08);
+      --accent: #60a5fa;
+      --bad: #fb7185;
+      --warn: #fbbf24;
+      --ok: #34d399;
     }
-    *{box-sizing:border-box;}
-    body{
-      font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;
-      margin:0;
-      background: radial-gradient(1000px 600px at 20% 0%, rgba(96,165,250,.18), transparent 60%),
-                  radial-gradient(800px 500px at 90% 10%, rgba(34,197,94,.12), transparent 60%),
-                  var(--bg);
-      color:var(--text);
+
+    * {
+      box-sizing: border-box;
     }
-    a{color:rgba(96,165,250,.95);text-decoration:none;}
-    a:hover{text-decoration:underline;}
 
-    .wrap{max-width:1200px;margin:28px auto;padding:0 16px;}
-    .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px;}
-    .topbar h1{margin:0;font-size:26px;}
-    .muted{color:var(--muted);}
-    code{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;}
+    body {
+      font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial;
+      margin: 0;
+      background: radial-gradient(1000px 600px at 20% 0%, rgba(96, 165, 250, .18), transparent 60%),
+        radial-gradient(800px 500px at 90% 10%, rgba(34, 197, 94, .12), transparent 60%),
+        var(--bg);
+      color: var(--text);
+    }
 
-    .card{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));border:1px solid var(--line);border-radius:16px;overflow:hidden;}
-    .cardHead{padding:12px 14px;border-bottom:1px solid var(--line);background:rgba(17,24,39,.55);font-weight:800;}
-    .cardBody{padding:14px;}
+    a {
+      color: rgba(96, 165, 250, .95);
+      text-decoration: none;
+    }
 
-    table{border-collapse:collapse;width:100%;}
-    th,td{border-bottom:1px solid var(--line);padding:7px 8px;font-size:13px;vertical-align:top;}
-    th{text-align:left;position:sticky;top:0;background:rgba(17,24,39,.92);backdrop-filter: blur(6px);}
+    a:hover {
+      text-decoration: underline;
+    }
 
-    .tag{padding:2px 8px;border-radius:999px;font-size:12px;display:inline-block;border:1px solid var(--line);}
-    .tag.ok{background:rgba(52,211,153,.12);}
-    .tag.inaccuracy{background:rgba(251,191,36,.12);}
-    .tag.mistake{background:rgba(251,146,60,.12);}
-    .tag.blunder{background:rgba(251,113,133,.14);}
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 16px 24px;
+    }
 
-    .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0 14px;}
-    .chip{border:1px solid var(--line);border-radius:999px;padding:6px 10px;background:rgba(255,255,255,.03);cursor:pointer;font-size:13px;color:var(--text);}
-    .chip input{margin-right:6px;}
+    .topbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
 
-    tr.tp{background:rgba(251,191,36,.08);}
-    tr.worst{background:rgba(251,113,133,.08);}
-    tr.playerRow td:first-child{font-weight:800;}
+    .topbar h1 {
+      margin: 0;
+      font-size: 26px;
+    }
 
-    .kv{display:grid;grid-template-columns: 160px 1fr;gap:6px 10px;font-size:13px;}
-    .kv div{padding:2px 0;}
+    .muted {
+      color: var(--muted);
+    }
 
-    .small{font-size:12px;color:var(--muted);}
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .cardHead {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(17, 24, 39, .55);
+      font-weight: 800;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cardBody {
+      padding: 14px;
+    }
+
+    /* ── Sticky Game Nav ── */
+    .gameNav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(11, 15, 25, .92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 0 -16px 14px;
+    }
+
+    .gameNav .navLabel {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-right: 4px;
+    }
+
+    .gameNav a {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(96, 165, 250, .10);
+      border: 1px solid var(--line);
+      color: var(--text);
+      transition: background .15s, transform .1s;
+    }
+
+    .gameNav a:hover {
+      background: rgba(96, 165, 250, .20);
+      transform: translateY(-1px);
+      text-decoration: none;
+    }
+
+    .gameNav a.active {
+      background: rgba(96, 165, 250, .25);
+      border-color: rgba(96, 165, 250, .4);
+    }
+
+    /* ── Stats Grid ── */
+    .statsGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    .statCard {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(15, 23, 42, .45);
+      text-align: center;
+    }
+
+    .statCard .statVal {
+      font-size: 22px;
+      font-weight: 800;
+      margin: 4px 0;
+    }
+
+    .statCard .statLabel {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    /* ── Game Section ── */
+    .gameSection {
+      scroll-margin-top: 60px;
+    }
+
+    .gameHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(17, 24, 39, .55);
+      transition: background .15s;
+    }
+
+    .gameHeader:hover {
+      background: rgba(17, 24, 39, .7);
+    }
+
+    .gameHeader h2 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .gameHeader .arrow {
+      font-size: 11px;
+      color: var(--muted);
+      transition: transform .2s;
+    }
+
+    .gameHeader .arrow.open {
+      transform: rotate(90deg);
+    }
+
+    .gameContent {
+      display: none;
+      padding: 14px;
+    }
+
+    .gameContent.open {
+      display: block;
+    }
+
+    /* ── Sticky Filters ── */
+    .filterBar {
+      position: sticky;
+      top: 52px;
+      z-index: 40;
+      background: rgba(11, 15, 25, .88);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 8px 0;
+      margin: 0 0 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 10px;
+      background: rgba(255, 255, 255, .03);
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text);
+      transition: background .15s;
+    }
+
+    .chip:hover {
+      background: rgba(255, 255, 255, .06);
+    }
+
+    .chip input {
+      margin-right: 5px;
+    }
+
+    /* ── Table ── */
+    .tableWrap {
+      max-height: 600px;
+      overflow-y: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 6px 8px;
+      font-size: 13px;
+      vertical-align: top;
+    }
+
+    th {
+      text-align: left;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(17, 24, 39, .95);
+      backdrop-filter: blur(6px);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .3px;
+    }
+
+    .tag {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      display: inline-block;
+      border: 1px solid var(--line);
+      font-weight: 600;
+    }
+
+    .tag.ok {
+      background: rgba(52, 211, 153, .12);
+      color: var(--ok);
+    }
+
+    .tag.inaccuracy {
+      background: rgba(251, 191, 36, .12);
+      color: var(--warn);
+    }
+
+    .tag.mistake {
+      background: rgba(251, 146, 60, .15);
+      color: #fb923c;
+    }
+
+    .tag.blunder {
+      background: rgba(251, 113, 133, .14);
+      color: var(--bad);
+    }
+
+    tr.tp {
+      background: rgba(251, 191, 36, .06);
+    }
+
+    tr.worst {
+      background: rgba(251, 113, 133, .06);
+    }
+
+    tr.playerRow td:first-child {
+      font-weight: 800;
+    }
+
+    /* ── Turning Points ── */
+    .tpList {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 8px 0;
+    }
+
+    .tpChip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 12px;
+      background: rgba(251, 191, 36, .08);
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .tpChip:hover {
+      background: rgba(251, 191, 36, .16);
+    }
+
+    .tpChip code {
+      font-size: 11px;
+    }
+
+    .kv {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 4px 10px;
+      font-size: 13px;
+    }
+
+    .kv div {
+      padding: 2px 0;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .colorGood {
+      color: var(--ok);
+    }
+
+    .colorWarn {
+      color: var(--warn);
+    }
+
+    .colorBad {
+      color: var(--bad);
+    }
   </style>
 
   <script>
-    function applyFilters(gameIndex){
-      const root=document.getElementById('game-'+gameIndex);
-      if(!root) return;
+    function applyFilters(gameIndex) {
+      const root = document.getElementById('game-' + gameIndex);
+      if (!root) return;
 
-      const onlyPlayer = root.querySelector('input[data-filter="onlyPlayer"]').checked;
-      const onlyBad    = root.querySelector('input[data-filter="onlyBad"]').checked;
-      const onlyTP     = root.querySelector('input[data-filter="onlyTP"]').checked;
-      const onlyWorst  = root.querySelector('input[data-filter="onlyWorst"]').checked;
+      const onlyPlayer = root.querySelector('input[data-filter="onlyPlayer"]');
+      const onlyBad = root.querySelector('input[data-filter="onlyBad"]');
+      const onlyTP = root.querySelector('input[data-filter="onlyTP"]');
+      const onlyWorst = root.querySelector('input[data-filter="onlyWorst"]');
 
       const rows = root.querySelectorAll('tbody tr[data-ply]');
-      rows.forEach(r=>{
-        let show=true;
-        if(onlyPlayer && r.dataset.isPlayer !== '1') show=false;
-        if(onlyBad && !(r.dataset.label==='inaccuracy' || r.dataset.label==='mistake' || r.dataset.label==='blunder')) show=false;
-        if(onlyTP && r.dataset.isTurning !== '1') show=false;
-        if(onlyWorst && r.dataset.isWorst !== '1') show=false;
+      rows.forEach(r => {
+        let show = true;
+        if (onlyPlayer && onlyPlayer.checked && r.dataset.isPlayer !== '1') show = false;
+        if (onlyBad && onlyBad.checked && !(r.dataset.label === 'inaccuracy' || r.dataset.label === 'mistake' || r.dataset.label === 'blunder')) show = false;
+        if (onlyTP && onlyTP.checked && r.dataset.isTurning !== '1') show = false;
+        if (onlyWorst && onlyWorst.checked && r.dataset.isWorst !== '1') show = false;
         r.style.display = show ? '' : 'none';
       });
     }
 
-    function jumpToPly(gameIndex, ply){
-      const root=document.getElementById('game-'+gameIndex);
-      if(!root) return;
-      const row = root.querySelector('tr[data-ply="' + ply + '"]');
-      if(!row) return;
+    function jumpToPly(gameIndex, ply) {
+      // Make sure the game is expanded
+      const content = document.querySelector('#gameSection-' + gameIndex + ' .gameContent');
+      if (content && !content.classList.contains('open')) {
+        toggleGame(gameIndex);
+      }
+      setTimeout(() => {
+        const root = document.getElementById('game-' + gameIndex);
+        if (!root) return;
+        const row = root.querySelector('tr[data-ply="' + ply + '"]');
+        if (!row) return;
+        row.style.display = '';
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        row.style.transition = 'background-color 0.3s ease';
+        const prev = row.style.backgroundColor;
+        row.style.backgroundColor = 'rgba(96,165,250,.25)';
+        setTimeout(() => { row.style.backgroundColor = prev; }, 1200);
+      }, 100);
+    }
 
-      // make sure row isn't hidden by filters
-      row.style.display = '';
+    function toggleGame(gameIndex) {
+      const content = document.querySelector('#gameSection-' + gameIndex + ' .gameContent');
+      const arrow = document.querySelector('#gameSection-' + gameIndex + ' .arrow');
+      if (!content) return;
+      const isOpen = content.classList.toggle('open');
+      if (arrow) arrow.classList.toggle('open', isOpen);
+    }
 
-      row.scrollIntoView({behavior:'smooth', block:'center'});
-      row.style.transition = 'background-color 0.2s ease';
-      const prev = row.style.backgroundColor;
-      row.style.backgroundColor = 'rgba(96,165,250,.22)';
-      setTimeout(()=>{ row.style.backgroundColor = prev; }, 900);
+    // Expand all / Collapse all
+    function expandAllGames() {
+      document.querySelectorAll('.gameContent').forEach(c => c.classList.add('open'));
+      document.querySelectorAll('.gameHeader .arrow').forEach(a => a.classList.add('open'));
+    }
+    function collapseAllGames() {
+      document.querySelectorAll('.gameContent').forEach(c => c.classList.remove('open'));
+      document.querySelectorAll('.gameHeader .arrow').forEach(a => a.classList.remove('open'));
     }
   </script>
 </head>
+
 <body>
   <div class="wrap">
     <div class="topbar">
       <div>
         <h1>ChessDNA Report</h1>
-        <div class="small">回到 <a href="/">首頁</a></div>
+        <div class="small"><a href="/">← 回首頁</a></div>
       </div>
-      <div class="small muted">debug json: <code>{{ debug_path }}</code></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        {% include "_download_buttons.html" %}
+      </div>
     </div>
 
     {% if inline_warn %}
-      <div style="margin:0 0 12px;padding:10px 12px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.10);border-radius:12px;color:#fde68a;">
-        {{ inline_warn }}
-      </div>
+    <div
+      style="margin:0 0 12px;padding:10px 12px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.10);border-radius:12px;color:#fde68a;font-size:13px;">
+      {{ inline_warn }}
+    </div>
     {% endif %}
 
-    <div class="card" style="margin-bottom:14px;">
-      <div class="cardHead">Run info</div>
+    {# ── Run Info ── #}
+    <div class="card">
+      <div class="cardHead">Run Info</div>
       <div class="cardBody">
-        {% include "_download_buttons.html" %}
         <div class="kv">
-          <div class="muted">Engine</div><div><code>{{ report.engine_path }}</code></div>
-          <div class="muted">time_per_move</div><div>{{ report.time_per_move }}s</div>
-          <div class="muted">max_plies</div><div>{{ report.max_plies }}</div>
+          <div class="muted">Engine</div>
+          <div><code>{{ report.engine_path }}</code></div>
+          <div class="muted">time_per_move</div>
+          <div>{{ report.time_per_move }}s</div>
+          <div class="muted">max_plies</div>
+          <div>{{ report.max_plies }}</div>
           {% if report.player_name %}
-            <div class="muted">player</div><div><code>{{ report.player_name }}</code></div>
+          <div class="muted">player</div>
+          <div><code>{{ report.player_name }}</code></div>
           {% endif %}
         </div>
       </div>
     </div>
 
+    {# ── Player Overview ── #}
     {% if report.player_overview %}
-      <div class="card" style="margin-bottom:14px;">
-        <div class="cardHead">Player overview — {{ report.player_overview.player_name }}</div>
-        <div class="cardBody">
-          <div class="small muted">Games found: {{ report.player_overview.games_found }} / {{ report.player_overview.games_total }}</div>
-          <div style="margin-top:8px;">
-            Avg CPL: {{ '%.1f' % report.player_overview.avg_cpl if report.player_overview.avg_cpl is not none else 'n/a' }}
-            | Accuracy: {{ '%.1f' % report.player_overview.accuracy if report.player_overview.accuracy is not none else 'n/a' }}
+    <div class="card">
+      <div class="cardHead">📊 Player Overview — {{ report.player_overview.player_name }}</div>
+      <div class="cardBody">
+        <div class="small muted" style="margin-bottom:10px;">
+          Games found: {{ report.player_overview.games_found }} / {{ report.player_overview.games_total }}
+        </div>
+        <div class="statsGrid">
+          <div class="statCard">
+            <div class="statLabel">Avg CPL</div>
+            <div
+              class="statVal {% if report.player_overview.avg_cpl is not none %}{% if report.player_overview.avg_cpl < 30 %}colorGood{% elif report.player_overview.avg_cpl < 80 %}colorWarn{% else %}colorBad{% endif %}{% endif %}">
+              {{ '%.1f' % report.player_overview.avg_cpl if report.player_overview.avg_cpl is not none else 'n/a' }}
+            </div>
           </div>
-          <div style="margin-top:6px;">
-            Inaccuracy: {{ report.player_overview.inaccuracy }} | Mistake: {{ report.player_overview.mistake }} | Blunder: {{ report.player_overview.blunder }}
+          <div class="statCard">
+            <div class="statLabel">Accuracy</div>
+            <div
+              class="statVal {% if report.player_overview.accuracy is not none %}{% if report.player_overview.accuracy > 85 %}colorGood{% elif report.player_overview.accuracy > 65 %}colorWarn{% else %}colorBad{% endif %}{% endif %}">
+              {{ '%.1f' % report.player_overview.accuracy if report.player_overview.accuracy is not none else 'n/a' }}%
+            </div>
+          </div>
+          <div class="statCard">
+            <div class="statLabel">Inaccuracies</div>
+            <div class="statVal colorWarn">{{ report.player_overview.inaccuracy }}</div>
+          </div>
+          <div class="statCard">
+            <div class="statLabel">Mistakes</div>
+            <div class="statVal" style="color:#fb923c;">{{ report.player_overview.mistake }}</div>
+          </div>
+          <div class="statCard">
+            <div class="statLabel">Blunders</div>
+            <div class="statVal colorBad">{{ report.player_overview.blunder }}</div>
           </div>
         </div>
       </div>
-    {% endif %}
-
-  {% for g in report.games %}
-    {% set game_index = loop.index %}
-    <hr/>
-    <h2>
-      Game {{ loop.index }}
-      {% if g.headers.get('White') and g.headers.get('Black') %}
-        — {{ g.headers.get('White') }} vs {{ g.headers.get('Black') }}
-      {% endif %}
-    </h2>
-
-    {% if g.turning_points and g.turning_points|length > 0 %}
-      <p><strong>Turning points (top CPL plies)</strong>: {{ g.turning_points | join(', ') }}</p>
-      <div class="muted" style="margin:6px 0 10px;">
-        {% for ply in g.turning_points %}
-          {% set p = g.plies[ply-1] %}
-          <div style="margin:4px 0;">
-            <a href="#" onclick="jumpToPly({{ game_index }}, {{ ply }}); return false;">#{{ ply }}</a>
-            <code>{{ p.san }}</code>
-            — CPL {{ p.cpl }}
-            | best: <code>{{ p.bestmove_uci }}</code>
-            {% if p.pv_uci and p.pv_uci|length>0 %}
-              | pv: <code>{{ (p.pv_uci[:6]) | join(' ') }}</code>
-            {% endif %}
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
-
-    <p>
-      Avg CPL (W): {{ '%.1f' % g.avg_cpl_white if g.avg_cpl_white is not none else 'n/a' }}
-      | Accuracy (W): {{ '%.1f' % g.accuracy_white if g.accuracy_white is not none else 'n/a' }}<br/>
-      Avg CPL (B): {{ '%.1f' % g.avg_cpl_black if g.avg_cpl_black is not none else 'n/a' }}
-      | Accuracy (B): {{ '%.1f' % g.accuracy_black if g.accuracy_black is not none else 'n/a' }}
-    </p>
-
-    {% if report.player_name %}
-      <div class="card" style="margin:10px 0;">
-        <div class="cardHead">{{ report.player_name }}（{{ g.player_side if g.player_side else 'not found in headers' }}）</div>
-        <div class="cardBody">
-          <div>
-            Avg CPL: {{ '%.1f' % g.player_avg_cpl if g.player_avg_cpl is not none else 'n/a' }}
-            | Accuracy: {{ '%.1f' % g.player_accuracy if g.player_accuracy is not none else 'n/a' }}
-          </div>
-          <div style="margin-top:6px;">
-            Inaccuracy: {{ g.player_inaccuracy }} | Mistake: {{ g.player_mistake }} | Blunder: {{ g.player_blunder }}
-          </div>
-          {% if g.player_worst and g.player_worst|length > 0 %}
-            <div style="margin-top:6px;">Worst plies: {{ g.player_worst | join(', ') }}</div>
-          {% endif %}
-        </div>
-      </div>
-    {% endif %}
-
-    <div id="game-{{ loop.index }}">
-      <div class="filters">
-        <label class="chip"><input type="checkbox" data-filter="onlyPlayer" onchange="applyFilters({{ loop.index }})" {% if report.player_name %}{% else %}disabled{% endif %}/>只看 player</label>
-        <label class="chip"><input type="checkbox" data-filter="onlyBad" onchange="applyFilters({{ loop.index }})"/>只看失誤(>=inaccuracy)</label>
-        <label class="chip"><input type="checkbox" data-filter="onlyTP" onchange="applyFilters({{ loop.index }})"/>只看 turning points</label>
-        <label class="chip"><input type="checkbox" data-filter="onlyWorst" onchange="applyFilters({{ loop.index }})" {% if report.player_name %}{% else %}disabled{% endif %}/>只看 player worst</label>
-        <span class="muted">提示：CPL 越大越傷。</span>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Side</th>
-            <th>Move</th>
-            <th>Best (cp)</th>
-            <th>Played (cp)</th>
-            <th>CPL</th>
-            <th>Acc</th>
-            <th>Label</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for p in g.plies %}
-            {% set is_turning = (p.ply in g.turning_points) %}
-            {% set is_worst = (report.player_name and (p.ply in g.player_worst)) %}
-            {% set is_player = (report.player_name and g.player_side and (p.side == g.player_side)) %}
-            <tr
-              data-ply="{{ p.ply }}"
-              data-side="{{ p.side }}"
-              data-label="{{ p.label }}"
-              data-is-turning="{{ 1 if is_turning else 0 }}"
-              data-is-worst="{{ 1 if is_worst else 0 }}"
-              data-is-player="{{ 1 if is_player else 0 }}"
-              class="{% if is_turning %}tp{% endif %} {% if is_worst %}worst{% endif %} {% if is_player %}playerRow{% endif %}"
-            >
-              <td>{{ p.ply }}</td>
-              <td>{{ p.side }}</td>
-              <td><code>{{ p.san }}</code></td>
-              <td>{{ p.best_cp }}</td>
-              <td>{{ p.played_cp }}</td>
-              <td>{{ p.cpl }}</td>
-              <td>{{ '%.1f' % p.accuracy if p.accuracy is not none else '' }}</td>
-              <td><span class="tag {{ p.label }} {{ p.label }}">{{ p.label }}</span></td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
     </div>
-  {% endfor %}
+    {% endif %}
 
-  <p><a href="/">回首頁</a></p>
+    {# ── Sticky Game Navigator ── #}
+    {% if report.games|length > 1 %}
+    <div class="gameNav">
+      <span class="navLabel">Games:</span>
+      {% for g in report.games %}
+      <a href="#gameSection-{{ loop.index }}" onclick="
+          const c=document.querySelector('#gameSection-{{ loop.index }} .gameContent');
+          if(c && !c.classList.contains('open')) toggleGame({{ loop.index }});
+        ">
+        {{ loop.index }}
+        {% if g.headers.get('White') and g.headers.get('Black') %}
+        · {{ g.headers.get('White')[:8] }} v {{ g.headers.get('Black')[:8] }}
+        {% endif %}
+      </a>
+      {% endfor %}
+      <span style="margin-left:auto;display:flex;gap:6px;">
+        <a href="#" onclick="expandAllGames();return false;" style="font-size:11px;">全展開</a>
+        <a href="#" onclick="collapseAllGames();return false;" style="font-size:11px;">全收合</a>
+      </span>
+    </div>
+    {% endif %}
+
+    {# ── Games ── #}
+    {% for g in report.games %}
+    {% set game_index = loop.index %}
+    <div id="gameSection-{{ loop.index }}" class="card gameSection">
+      <div class="gameHeader" onclick="toggleGame({{ loop.index }})">
+        <h2>
+          Game {{ loop.index }}
+          {% if g.headers.get('White') and g.headers.get('Black') %}
+          — {{ g.headers.get('White') }} vs {{ g.headers.get('Black') }}
+          {% endif %}
+          {% if g.headers.get('Result') %}
+          <span class="small" style="margin-left:6px;">({{ g.headers.get('Result') }})</span>
+          {% endif %}
+        </h2>
+        <div style="display:flex;align-items:center;gap:12px;">
+          {% if g.accuracy_white is not none %}
+          <span class="small">W: {{ '%.0f' % g.accuracy_white }}%</span>
+          {% endif %}
+          {% if g.accuracy_black is not none %}
+          <span class="small">B: {{ '%.0f' % g.accuracy_black }}%</span>
+          {% endif %}
+          <span class="arrow">▶</span>
+        </div>
+      </div>
+
+      <div class="gameContent{% if report.games|length == 1 %} open{% endif %}">
+        {# Game summary stats #}
+        <div class="statsGrid" style="margin-bottom:12px;">
+          <div class="statCard">
+            <div class="statLabel">CPL (White)</div>
+            <div class="statVal" style="font-size:18px;">{{ '%.1f' % g.avg_cpl_white if g.avg_cpl_white is not none else
+              'n/a' }}</div>
+          </div>
+          <div class="statCard">
+            <div class="statLabel">Acc (White)</div>
+            <div class="statVal" style="font-size:18px;">{{ '%.1f' % g.accuracy_white if g.accuracy_white is not none
+              else 'n/a' }}{% if g.accuracy_white is not none %}%{% endif %}</div>
+          </div>
+          <div class="statCard">
+            <div class="statLabel">CPL (Black)</div>
+            <div class="statVal" style="font-size:18px;">{{ '%.1f' % g.avg_cpl_black if g.avg_cpl_black is not none else
+              'n/a' }}</div>
+          </div>
+          <div class="statCard">
+            <div class="statLabel">Acc (Black)</div>
+            <div class="statVal" style="font-size:18px;">{{ '%.1f' % g.accuracy_black if g.accuracy_black is not none
+              else 'n/a' }}{% if g.accuracy_black is not none %}%{% endif %}</div>
+          </div>
+        </div>
+
+        {# Player per-game stats #}
+        {% if report.player_name and g.player_side %}
+        <div
+          style="padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:rgba(96,165,250,.06);margin-bottom:12px;">
+          <strong style="font-size:13px;">{{ report.player_name }}</strong>
+          <span class="small">({{ g.player_side }})</span>
+          <span style="margin-left:10px;">
+            CPL: <strong>{{ '%.1f' % g.player_avg_cpl if g.player_avg_cpl is not none else 'n/a' }}</strong>
+            · Acc: <strong>{{ '%.1f' % g.player_accuracy if g.player_accuracy is not none else 'n/a' }}%</strong>
+            · <span class="colorWarn">{{ g.player_inaccuracy }} inac</span>
+            · <span style="color:#fb923c;">{{ g.player_mistake }} mis</span>
+            · <span class="colorBad">{{ g.player_blunder }} blun</span>
+          </span>
+        </div>
+        {% elif report.player_name and not g.player_side %}
+        <div
+          style="padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.03);margin-bottom:12px;font-size:13px;color:var(--muted);">
+          {{ report.player_name }} — not found in this game's headers
+        </div>
+        {% endif %}
+
+        {# Turning points as clickable chips #}
+        {% if g.turning_points and g.turning_points|length > 0 %}
+        <div style="margin-bottom:10px;">
+          <strong style="font-size:13px;">Turning Points</strong>
+          <div class="tpList">
+            {% for ply in g.turning_points %}
+            {% if ply >= 1 and ply <= g.plies|length %} {% set p=g.plies[ply-1] %} <span class="tpChip"
+              onclick="jumpToPly({{ game_index }}, {{ ply }})">
+              #{{ ply }} <code>{{ p.san }}</code> <span class="small">CPL {{ p.cpl }}</span>
+              </span>
+              {% endif %}
+              {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# Sticky Filter Bar #}
+        <div id="game-{{ loop.index }}">
+          <div class="filterBar">
+            <label class="chip"><input type="checkbox" data-filter="onlyPlayer"
+                onchange="applyFilters({{ loop.index }})" {% if report.player_name %}{% else %}disabled{% endif %} />只看
+              player</label>
+            <label class="chip"><input type="checkbox" data-filter="onlyBad"
+                onchange="applyFilters({{ loop.index }})" />只看失誤</label>
+            <label class="chip"><input type="checkbox" data-filter="onlyTP"
+                onchange="applyFilters({{ loop.index }})" />Turning points</label>
+            <label class="chip"><input type="checkbox" data-filter="onlyWorst" onchange="applyFilters({{ loop.index }})"
+                {% if report.player_name %}{% else %}disabled{% endif %} />Worst moves</label>
+          </div>
+
+          {# Scrollable table with sticky headers #}
+          <div class="tableWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Side</th>
+                  <th>Move</th>
+                  <th>Best CP</th>
+                  <th>Played CP</th>
+                  <th>CPL</th>
+                  <th>Acc</th>
+                  <th>Label</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in g.plies %}
+                {% set is_turning = (p.ply in g.turning_points) %}
+                {% set is_worst = (report.player_name and (p.ply in g.player_worst)) %}
+                {% set is_player = (report.player_name and g.player_side and (p.side == g.player_side)) %}
+                <tr data-ply="{{ p.ply }}" data-side="{{ p.side }}" data-label="{{ p.label }}"
+                  data-is-turning="{{ 1 if is_turning else 0 }}" data-is-worst="{{ 1 if is_worst else 0 }}"
+                  data-is-player="{{ 1 if is_player else 0 }}"
+                  class="{% if is_turning %}tp{% endif %} {% if is_worst %}worst{% endif %} {% if is_player %}playerRow{% endif %}">
+                  <td>{{ p.ply }}</td>
+                  <td>{{ p.side }}</td>
+                  <td><code>{{ p.san }}</code></td>
+                  <td>{{ p.best_cp }}</td>
+                  <td>{{ p.played_cp }}</td>
+                  <td>{{ p.cpl }}</td>
+                  <td>{{ '%.1f' % p.accuracy if p.accuracy is not none else '' }}</td>
+                  <td><span class="tag {{ p.label }}">{{ p.label }}</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <p class="small" style="margin-top:10px;"><a href="/">← 回首頁</a> · debug json: <code>{{ debug_path }}</code></p>
+  </div>
+  <!-- PWA: Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => { });
+    }
+  </script>
 </body>
+
 </html>

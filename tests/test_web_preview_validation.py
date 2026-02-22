@@ -47,8 +47,8 @@ def test_preview_returns_token_and_game_list(monkeypatch):
     # Patch lichess fetch to avoid network.
     import chessdna.core.lichess as lichess
 
-    def fake_fetch(user: str, max_games: int = 10) -> str:
-        assert user == "someone"
+    def fake_fetch(username: str, *, max_games: int = 50) -> str:
+        assert username == "someone"
         assert max_games == 2
         return SAMPLE_PGN
 
@@ -83,7 +83,7 @@ def test_preview_keeps_user_settings_in_form(monkeypatch):
     # Preview is a UX step; it should not reset engine/time/max/player settings.
     import chessdna.core.lichess as lichess
 
-    def fake_fetch(user: str, max_games: int = 10) -> str:
+    def fake_fetch(username: str, *, max_games: int = 50) -> str:
         return SAMPLE_PGN
 
     monkeypatch.setattr(lichess, "fetch_user_games_pgn", fake_fetch)

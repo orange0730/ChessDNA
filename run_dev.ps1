@@ -1,5 +1,4 @@
 $ErrorActionPreference = 'Stop'
-$env:STOCKFISH_PATH = $env:STOCKFISH_PATH
 if([string]::IsNullOrWhiteSpace($env:STOCKFISH_PATH)){
   $env:STOCKFISH_PATH = 'D:\code\chess_train\stockfish\stockfish-windows-x86-64-avx2.exe'
 }

@@ -1,132 +1,460 @@
 <!doctype html>
 <html lang="zh-Hant">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ChessDNA</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/static/manifest.json" />
+  <meta name="theme-color" content="#0b0f19" />
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ChessDNA" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+
   <style>
-    :root{
-      --bg:#0b0f19;
-      --card:#111827;
-      --card2:#0f172a;
-      --text:#e5e7eb;
-      --muted:#9ca3af;
-      --line:rgba(255,255,255,.08);
-      --accent:#60a5fa;
-      --accent2:#22c55e;
+    :root {
+      --bg: #0b0f19;
+      --card: #111827;
+      --card2: #0f172a;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --line: rgba(255, 255, 255, .08);
+      --accent: #60a5fa;
+      --accent2: #22c55e;
+      --bad: #fb7185;
     }
-    *{box-sizing:border-box;}
-    body{
-      font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;
-      margin:0;
-      background: radial-gradient(1000px 600px at 20% 0%, rgba(96,165,250,.18), transparent 60%),
-                  radial-gradient(800px 500px at 90% 10%, rgba(34,197,94,.12), transparent 60%),
-                  var(--bg);
-      color:var(--text);
+
+    * {
+      box-sizing: border-box;
     }
-    .wrap{max-width:980px;margin:28px auto;padding:0 16px;}
-    .header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px;}
-    .brand h1{margin:0;font-size:28px;letter-spacing:.2px;}
-    .brand p{margin:6px 0 0;color:var(--muted);font-size:13px;}
-    .pill{border:1px solid var(--line);padding:6px 10px;border-radius:999px;color:var(--muted);font-size:12px;background:rgba(255,255,255,.03)}
 
-    .card{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));border:1px solid var(--line);border-radius:16px;overflow:hidden;}
-    .cardHead{padding:14px 16px;border-bottom:1px solid var(--line);background:rgba(17,24,39,.55)}
-    .cardHead strong{font-size:14px;}
-    .cardBody{padding:16px;}
-
-    input,button,textarea,select{font-size:14px;}
-    input,textarea,select{
-      width:100%;
-      background:rgba(15,23,42,.65);
-      color:var(--text);
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:10px 12px;
-      outline:none;
+    body {
+      font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial;
+      margin: 0;
+      padding-bottom: 90px;
+      background: radial-gradient(1000px 600px at 20% 0%, rgba(96, 165, 250, .18), transparent 60%),
+        radial-gradient(800px 500px at 90% 10%, rgba(34, 197, 94, .12), transparent 60%),
+        var(--bg);
+      color: var(--text);
     }
-    input:focus,textarea:focus,select:focus{border-color:rgba(96,165,250,.55);box-shadow:0 0 0 3px rgba(96,165,250,.15)}
-    textarea{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;}
 
-    .grid{display:grid;grid-template-columns:1fr;gap:14px;}
-    @media (min-width:900px){
-      .grid{grid-template-columns: 1.2fr .8fr;align-items:start;}
+    .wrap {
+      max-width: 980px;
+      margin: 20px auto;
+      padding: 0 16px;
     }
-    .row{margin:0;}
-    label{display:block;margin:0 0 8px;font-weight:650;font-size:13px;color:#f3f4f6;}
-    .hint{color:var(--muted);font-size:12px;margin-top:6px;line-height:1.4}
 
-    .btnRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center;}
-    .btn{
-      padding:10px 14px;border:1px solid rgba(255,255,255,.10);
-      border-radius:12px;background:rgba(96,165,250,.16);
-      color:var(--text);cursor:pointer;
+    .header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
     }
-    .btn:hover{background:rgba(96,165,250,.22)}
-    .btnPrimary{background:linear-gradient(135deg, rgba(96,165,250,.35), rgba(96,165,250,.18));border-color:rgba(96,165,250,.35)}
-    .btnPrimary:hover{background:linear-gradient(135deg, rgba(96,165,250,.42), rgba(96,165,250,.20))}
-    .btn:disabled{opacity:.6;cursor:not-allowed;}
 
-    .small{font-size:12px;color:var(--muted)}
-    .divider{height:1px;background:var(--line);margin:14px 0;}
+    .brand h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: .2px;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      padding: 6px 10px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 12px;
+      background: rgba(255, 255, 255, .03)
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .cardHead {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(17, 24, 39, .55)
+    }
+
+    .cardHead strong {
+      font-size: 14px;
+    }
+
+    .cardBody {
+      padding: 16px;
+    }
+
+    input,
+    button,
+    textarea,
+    select {
+      font-size: 14px;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      background: rgba(15, 23, 42, .65);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: rgba(96, 165, 250, .55);
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, .15)
+    }
+
+    textarea {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    }
+
+    label {
+      display: block;
+      margin: 0 0 6px;
+      font-weight: 650;
+      font-size: 13px;
+      color: #f3f4f6;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 4px;
+      line-height: 1.4
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--line);
+      margin-bottom: 14px;
+    }
+
+    .tab {
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color .2s, border-color .2s;
+      white-space: nowrap;
+    }
+
+    .tab:hover {
+      color: var(--text);
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tabPanel {
+      display: none;
+    }
+
+    .tabPanel.active {
+      display: block;
+    }
+
+    /* ── Settings toggle ── */
+    .settingsToggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(15, 23, 42, .35);
+      transition: background .2s;
+      margin-bottom: 12px;
+    }
+
+    .settingsToggle:hover {
+      background: rgba(15, 23, 42, .55);
+    }
+
+    .settingsToggle .arrow {
+      font-size: 11px;
+      transition: transform .2s;
+    }
+
+    .settingsToggle .arrow.open {
+      transform: rotate(90deg);
+    }
+
+    .settingsSummary {
+      color: var(--muted);
+      font-size: 12px;
+      margin-left: auto;
+    }
+
+    .settingsBody {
+      display: none;
+      padding: 0 2px;
+    }
+
+    .settingsBody.open {
+      display: block;
+    }
+
+    /* ── Buttons ── */
+    .btnRow {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 9px 16px;
+      border: 1px solid rgba(255, 255, 255, .10);
+      border-radius: 10px;
+      background: rgba(96, 165, 250, .14);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background .2s, transform .1s, box-shadow .2s;
+    }
+
+    .btn:hover {
+      background: rgba(96, 165, 250, .22);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(96, 165, 250, .15);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .btnOutline {
+      background: transparent;
+      border: 1.5px solid rgba(96, 165, 250, .45);
+      color: var(--accent);
+    }
+
+    .btnOutline:hover {
+      background: rgba(96, 165, 250, .10);
+    }
+
+    /* ── Sticky Action Bar ── */
+    .actionBar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(11, 15, 25, .92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid var(--line);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .btnAnalyze {
+      padding: 12px 32px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: #fff;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .3px;
+      transition: transform .15s, box-shadow .2s, opacity .2s;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, .35);
+    }
+
+    .btnAnalyze:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(37, 99, 235, .45);
+    }
+
+    .btnAnalyze:active {
+      transform: translateY(0);
+    }
+
+    .btnAnalyze:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .actionInfo {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* ── Game list ── */
+    .gameCard {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(15, 23, 42, .35);
+      font-weight: 500;
+      transition: background .15s;
+    }
+
+    .gameCard:hover {
+      background: rgba(15, 23, 42, .55);
+    }
+
+    .gameCard input[type="checkbox"] {
+      width: auto;
+      margin-top: 2px;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted)
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--line);
+      margin: 12px 0;
+    }
+
+    .row {
+      margin: 0 0 12px;
+    }
+
+    .row:last-child {
+      margin-bottom: 0;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    @media (min-width:700px) {
+      .grid2 {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
   </style>
+
   <script>
-    function showInlineError(msg){
-      const el=document.getElementById('inlineErr');
-      if(!el) return;
+    /* ── Inline Error ── */
+    function showInlineError(msg) {
+      const el = document.getElementById('inlineErr');
+      if (!el) return;
       el.textContent = msg;
       el.style.display = msg ? 'block' : 'none';
     }
 
-    function updateSelectedCount(){
-      const out = document.getElementById('selCount');
-      if(!out) return;
-      const n = document.querySelectorAll('input[name="game_idx"]:checked').length;
-      out.textContent = `${n} 盤已勾選`;
+    /* ── Tabs ── */
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+      document.querySelectorAll('.tabPanel').forEach(p => p.classList.toggle('active', p.id === tabId));
     }
 
-    function selectAllGames(){
+    /* ── Settings toggle ── */
+    function toggleSettings() {
+      const body = document.getElementById('settingsBody');
+      const arrow = document.getElementById('settingsArrow');
+      const isOpen = body.classList.toggle('open');
+      arrow.classList.toggle('open', isOpen);
+    }
+
+    /* ── Game selection helpers ── */
+    function updateSelectedCount() {
+      const out = document.getElementById('selCount');
+      const bar = document.getElementById('barSelCount');
+      const n = document.querySelectorAll('input[name="game_idx"]:checked').length;
+      const txt = n > 0 ? `${n} 盤已勾選` : '';
+      if (out) out.textContent = txt;
+      if (bar) bar.textContent = txt;
+    }
+    function selectAllGames() {
       document.querySelectorAll('input[name="game_idx"]').forEach(cb => cb.checked = true);
       updateSelectedCount();
     }
-
-    function selectNoGames(){
+    function selectNoGames() {
       document.querySelectorAll('input[name="game_idx"]').forEach(cb => cb.checked = false);
       updateSelectedCount();
     }
 
-    function updatePlatformFields(){
+    /* ── Platform fields ── */
+    function updatePlatformFields() {
       const sel = document.getElementById('platformSel');
       const pf = sel ? (sel.value || 'auto') : 'auto';
-
       const lichWrap = document.getElementById('lichessUserWrap');
       const ccomWrap = document.getElementById('chesscomUserWrap');
       const lich = document.getElementById('lichessUser');
       const ccom = document.getElementById('chesscomUser');
-
-      // Auto: show both. Explicit platform: show only the relevant field.
       const showLich = (pf === 'auto' || pf === 'lichess');
       const showCcom = (pf === 'auto' || pf === 'chesscom');
-
-      if(lichWrap) lichWrap.style.display = showLich ? 'block' : 'none';
-      if(ccomWrap) ccomWrap.style.display = showCcom ? 'block' : 'none';
-      if(lich) lich.disabled = !showLich;
-      if(ccom) ccom.disabled = !showCcom;
+      if (lichWrap) lichWrap.style.display = showLich ? 'block' : 'none';
+      if (ccomWrap) ccomWrap.style.display = showCcom ? 'block' : 'none';
+      if (lich) lich.disabled = !showLich;
+      if (ccom) ccom.disabled = !showCcom;
     }
 
+    /* ── On Load ── */
     window.addEventListener('load', () => {
       const sel = document.getElementById('platformSel');
-      if(sel) sel.addEventListener('change', updatePlatformFields);
-
+      if (sel) sel.addEventListener('change', updatePlatformFields);
       document.querySelectorAll('input[name="game_idx"]').forEach(cb => {
         cb.addEventListener('change', updateSelectedCount);
       });
-
       updatePlatformFields();
       updateSelectedCount();
+
+      // Auto-switch to online tab if preview games are showing
+      {% if games and preview_token %}
+      switchTab('tabOnline');
+      {% endif %}
     });
 
-    function onSubmit(ev){
+    /* ── Form submit validation ── */
+    function onSubmit(ev) {
       const file = document.querySelector('input[name="pgn"]');
       const text = document.querySelector('textarea[name="pgn_text"]');
       const lich = document.querySelector('input[name="lichess_user"]');
@@ -134,182 +462,295 @@
 
       const hasFile = file && file.files && file.files.length > 0;
       const hasText = text && text.value && text.value.trim().length > 0;
-      const hasOnline = (lich && lich.value.trim().length>0) || (ccom && ccom.value.trim().length>0);
+      const hasOnline = (lich && lich.value.trim().length > 0) || (ccom && ccom.value.trim().length > 0);
       const pt = document.querySelector('input[name="preview_token"]');
-      const hasPreview = pt && pt.value && pt.value.trim().length>0;
+      const hasPreview = pt && pt.value && pt.value.trim().length > 0;
       const hasSelection = document.querySelectorAll('input[name="game_idx"]:checked').length > 0;
 
       const submitterId = ev && ev.submitter ? ev.submitter.id : '';
       const isPreview = submitterId === 'previewBtn';
 
-      if(isPreview){
+      if (isPreview) {
         const sel = document.getElementById('platformSel');
         const pf = sel ? (sel.value || 'auto') : 'auto';
-        const hasLich = lich && lich.value && lich.value.trim().length>0;
-        const hasCcom = ccom && ccom.value && ccom.value.trim().length>0;
-
-        if(pf === 'lichess' && !hasLich){
-          showInlineError('你選了 Lichess，請輸入 Lichess username。');
-          return false;
-        }
-        if(pf === 'chesscom' && !hasCcom){
-          showInlineError('你選了 Chess.com，請輸入 Chess.com username。');
-          return false;
-        }
-        if(pf === 'auto' && !hasLich && !hasCcom){
-          showInlineError('要抓對局，請至少輸入一個 Lichess 或 Chess.com username。');
-          return false;
-        }
-
+        const hasLich = lich && lich.value && lich.value.trim().length > 0;
+        const hasCcom = ccom && ccom.value && ccom.value.trim().length > 0;
+        if (pf === 'lichess' && !hasLich) { showInlineError('請輸入 Lichess username。'); return false; }
+        if (pf === 'chesscom' && !hasCcom) { showInlineError('請輸入 Chess.com username。'); return false; }
+        if (pf === 'auto' && !hasLich && !hasCcom) { showInlineError('請至少輸入一個 username。'); return false; }
         showInlineError('');
         return true;
       }
 
-      if(!hasFile && !hasText && !hasOnline && !(hasPreview && hasSelection)){
-        showInlineError('請上傳 PGN 檔、貼上 PGN 文字，或輸入 Lichess/Chess.com username 後先按「抓出對局」。');
+      if (!hasFile && !hasText && !hasOnline && !(hasPreview && hasSelection)) {
+        showInlineError('請選擇至少一種輸入方式：線上抓棋譜、上傳 PGN 或貼上 PGN。');
         return false;
       }
-
-      if(hasPreview && !hasSelection && !hasFile && !hasText){
-        showInlineError('你目前在「線上棋譜預覽」模式，但沒有勾選任何對局；請至少勾選 1 盤。');
+      if (hasPreview && !hasSelection && !hasFile && !hasText) {
+        showInlineError('請至少勾選 1 盤對局。');
         return false;
       }
 
       showInlineError('');
-      const btn=document.getElementById('submitBtn');
-      btn.disabled=true;
-      btn.textContent='分析中…請稍等';
+      const btn = document.getElementById('submitBtn');
+      const barBtn = document.getElementById('barSubmitBtn');
+      if (btn) { btn.disabled = true; btn.textContent = '分析中…'; }
+      if (barBtn) { barBtn.disabled = true; barBtn.textContent = '分析中…請稍等'; }
       return true;
     }
   </script>
 </head>
+
 <body>
   <div class="wrap">
     <div class="header">
       <div class="brand">
         <h1>ChessDNA</h1>
-        <p>輸入 PGN / 線上棋譜，使用 Stockfish 計算 CPL / accuracy 等指標，產生報告（MVP）。</p>
+        <p>Stockfish 引擎分析 · CPL / Accuracy / Turning Points</p>
       </div>
-      <div class="pill">Tip: time_per_move 越大越準，但會更慢</div>
+      <div class="pill">MVP v0.1</div>
     </div>
 
     <form class="card" action="/analyze" method="post" enctype="multipart/form-data" onsubmit="return onSubmit(event);">
-      <div class="cardHead"><strong>Analyze PGN</strong> <span class="small">（上傳 / 貼上 / 線上抓棋譜）</span></div>
+
+      <div class="cardHead"><strong>Analyze PGN</strong></div>
       <div class="cardBody">
-        <div id="inlineWarn" style="{% if inline_warn %}display:block{% else %}display:none{% endif %};margin:0 0 12px;padding:10px 12px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.10);border-radius:12px;color:#fde68a;">{{ inline_warn or '' }}</div>
-        <div id="inlineErr" style="{% if inline_err %}display:block{% else %}display:none{% endif %};margin:0 0 12px;padding:10px 12px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.10);border-radius:12px;color:#fecaca;">{{ inline_err or '' }}</div>
-        <div class="grid">
-          <div>
-            <div class="row">
-              <label>玩家名稱（用來比對 PGN 的 White/Black）</label>
-              <input type="text" name="player_name" placeholder="例：orange0730" value="{{ (prefill.player_name if prefill is defined else '') }}" />
-              <div class="hint">如果你想看「這個玩家」的統計就填；留空也可（會顯示全部）。</div>
-            </div>
 
-            <div class="row">
-              <label>線上抓棋譜（MVP）</label>
-              <div class="hint">支援 Lichess / Chess.com：輸入 username 後先按「抓出對局」，再勾選要分析的對局。</div>
-              <div style="display:grid;grid-template-columns:1fr;gap:10px;">
-                <select id="platformSel" name="platform">
+        <div id="inlineWarn"
+          style="{% if inline_warn %}display:block{% else %}display:none{% endif %};margin:0 0 10px;padding:9px 12px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.10);border-radius:10px;color:#fde68a;font-size:13px;">
+          {{ inline_warn or '' }}</div>
+        <div id="inlineErr"
+          style="{% if inline_err %}display:block{% else %}display:none{% endif %};margin:0 0 10px;padding:9px 12px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.10);border-radius:10px;color:#fecaca;font-size:13px;">
+          {{ inline_err or '' }}</div>
+
+        {# ── Player Name (always visible) ── #}
+        <div class="row">
+          <label>玩家名稱 <span style="font-weight:400;color:var(--muted)">— 比對 PGN 的 White/Black，留空顯示全部</span></label>
+          <input type="text" name="player_name" placeholder="例：orange0730"
+            value="{{ (prefill.player_name if prefill is defined else '') }}" />
+        </div>
+
+        <div class="divider"></div>
+
+        {# ── Tabs ── #}
+        <div class="tabs">
+          <button type="button" class="tab active" data-tab="tabOnline" onclick="switchTab('tabOnline')">🌐
+            線上抓棋譜</button>
+          <button type="button" class="tab" data-tab="tabUpload" onclick="switchTab('tabUpload')">📁 上傳檔案</button>
+          <button type="button" class="tab" data-tab="tabPaste" onclick="switchTab('tabPaste')">📋 貼上 PGN</button>
+        </div>
+
+        {# ── Tab: Online ── #}
+        <div id="tabOnline" class="tabPanel active">
+          <div class="row">
+            <div class="grid2">
+              <div>
+                <select id="platformSel" name="platform" title="選擇平台">
                   {% set pf = (prefill.platform if prefill is defined and prefill.platform is defined else 'auto') %}
-                  <option value="auto" {% if pf=='auto' %}selected{% endif %}>平台：自動（填 Lichess 就用 Lichess，否則 Chess.com）</option>
-                  <option value="lichess" {% if pf=='lichess' %}selected{% endif %}>平台：Lichess</option>
-                  <option value="chesscom" {% if pf=='chesscom' %}selected{% endif %}>平台：Chess.com</option>
+                  <option value="auto" {% if pf=='auto' %}selected{% endif %}>平台：自動</option>
+                  <option value="lichess" {% if pf=='lichess' %}selected{% endif %}>Lichess</option>
+                  <option value="chesscom" {% if pf=='chesscom' %}selected{% endif %}>Chess.com</option>
                 </select>
-                <div id="lichessUserWrap">
-                  <input id="lichessUser" type="text" name="lichess_user" placeholder="Lichess username（例：orange_bot）" value="{{ (prefill.lichess_user if prefill is defined else '') }}" />
-                </div>
-                <div id="chesscomUserWrap">
-                  <input id="chesscomUser" type="text" name="chesscom_user" placeholder="Chess.com username（例：hikaru）" value="{{ (prefill.chesscom_user if prefill is defined else '') }}" />
-                </div>
-                <input type="number" name="fetch_max" step="1" min="1" max="50" value="{{ (prefill.fetch_max if prefill is defined else 10) }}" placeholder="最多抓幾盤（1~50）" title="最多抓幾盤（1~50）" aria-label="fetch_max" />
               </div>
-              <div class="hint">「自動」模式下：若兩個都填，優先使用 Lichess。</div>
-              <div class="btnRow" style="margin-top:10px;">
-                <button id="previewBtn" class="btn" type="submit" formaction="/preview" formmethod="post">抓出對局（勾選後再分析）</button>
-                <span class="small">也可不 preview，直接 Analyze（會把抓到的對局全部分析）。</span>
+              <div>
+                <input type="number" name="fetch_max" step="1" min="1" max="50"
+                  value="{{ (prefill.fetch_max if prefill is defined else 10) }}" placeholder="最多幾盤 (1~50)"
+                  title="最多抓幾盤" aria-label="fetch_max" />
               </div>
-            </div>
-
-            {% if games and preview_token %}
-            <div class="divider"></div>
-            <div class="row">
-              <label>勾選要分析的對局</label>
-              <input type="hidden" name="preview_token" value="{{ preview_token }}" />
-              <div class="hint">
-                目前顯示最近 {{ games|length }} 盤（上限 {{ (prefill.fetch_max if prefill is defined else 50) }}）。
-                {% if preview_platform %}<span class="small">來源平台：{{ preview_platform }}</span>{% endif %}
-              </div>
-              <div class="btnRow" style="margin-top:10px;">
-                <button class="btn" type="button" onclick="selectAllGames();">全選</button>
-                <button class="btn" type="button" onclick="selectNoGames();">全不選</button>
-                <span id="selCount" class="small"></span>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px;">
-                {% for g in games %}
-                <label style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(15,23,42,.35);font-weight:500;">
-                  <input type="checkbox" name="game_idx" value="{{ g.idx }}" style="width:auto;margin-top:2px;" checked />
-                  <div>
-                    <div style="font-size:13px;">{{ g.white }} vs {{ g.black }} <span class="small">({{ g.result }})</span></div>
-                    <div class="small">{{ g.date }} · {{ g.event }}</div>
-                    {% if g.site %}<div class="small">{{ g.site }}</div>{% endif %}
-                  </div>
-                </label>
-                {% endfor %}
-              </div>
-            </div>
-            {% endif %}
-
-            <div class="divider"></div>
-
-            <div class="row">
-              <label>PGN 上傳（檔案）</label>
-              <input type="file" name="pgn" accept=".pgn,.txt" />
-              <div class="hint">如果你也貼了下面的 PGN 文字，會優先使用貼上的內容。</div>
-            </div>
-
-            <div class="row">
-              <label>PGN（貼上文字）</label>
-              <textarea name="pgn_text" rows="10" placeholder="貼上 PGN 內容"></textarea>
             </div>
           </div>
-
-          <div>
-            <div class="card" style="background:rgba(17,24,39,.35);">
-              <div class="cardHead" style="background:rgba(15,23,42,.35)"><strong>Settings</strong></div>
-              <div class="cardBody">
-                <div class="row">
-                  <label>Stockfish 路徑</label>
-                  <input type="text" name="engine_path" value="{{ (prefill.engine_path if prefill is defined and prefill.engine_path is defined and prefill.engine_path else default_engine) }}" />
-                  <div class="hint">可用環境變數 <code>STOCKFISH_PATH</code> 覆蓋預設。</div>
-                </div>
-
-                <div class="row">
-                  <label>每步思考時間（秒）</label>
-                  <input type="number" name="time_per_move" step="0.01" min="0.01" value="{{ (prefill.time_per_move if prefill is defined and prefill.time_per_move is defined else default_time) }}" />
-                  <div class="hint">建議 0.05～0.10 秒；要更準就調大。</div>
-                </div>
-
-                <div class="row">
-                  <label>最多分析 plies</label>
-                  <input type="number" name="max_plies" step="1" min="10" value="{{ (prefill.max_plies if prefill is defined and prefill.max_plies is defined else 200) }}" />
-                  <div class="hint">太大會變很久；MVP 先用 200。</div>
-                </div>
-
-                <div class="divider"></div>
-
-                <div class="btnRow">
-                  <button id="submitBtn" class="btn btnPrimary" type="submit">開始分析</button>
-                  <span class="small">耗時取決於 plies 與 time_per_move。</span>
-                </div>
+          <div class="row">
+            <div class="grid2">
+              <div id="lichessUserWrap">
+                <input id="lichessUser" type="text" name="lichess_user" placeholder="Lichess username"
+                  value="{{ (prefill.lichess_user if prefill is defined else '') }}" />
               </div>
+              <div id="chesscomUserWrap">
+                <input id="chesscomUser" type="text" name="chesscom_user" placeholder="Chess.com username"
+                  value="{{ (prefill.chesscom_user if prefill is defined else '') }}" />
+              </div>
+            </div>
+          </div>
+          <div class="btnRow">
+            <button id="previewBtn" class="btn btnOutline" type="submit" formaction="/preview" formmethod="post">抓出對局
+              →</button>
+            <span class="small">也可跳過 preview，直接「開始分析」。</span>
+          </div>
+
+          {% if games and preview_token %}
+          <div class="divider"></div>
+          <div class="row">
+            <input type="hidden" name="preview_token" value="{{ preview_token }}" />
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <label style="margin:0;">已抓到 {{ games|length }} 盤</label>
+              {% if preview_platform %}<span class="small">（來源平台：{{ preview_platform }}）</span>{% endif %}
+              <span id="selCount" class="small" style="margin-left:auto;"></span>
+            </div>
+            <div class="btnRow" style="margin-top:0;margin-bottom:10px;">
+              <button class="btn" type="button" onclick="selectAllGames();"
+                style="padding:6px 12px;font-size:12px;">全選</button>
+              <button class="btn" type="button" onclick="selectNoGames();"
+                style="padding:6px 12px;font-size:12px;">全不選</button>
+            </div>
+            <div
+              style="display:grid;grid-template-columns:1fr;gap:6px;max-height:320px;overflow-y:auto;padding-right:4px;">
+              {% for g in games %}
+              <label class="gameCard">
+                <input type="checkbox" name="game_idx" value="{{ g.idx }}" checked />
+                <div>
+                  <div style="font-size:13px;">{{ g.white }} vs {{ g.black }} <span class="small">({{ g.result
+                      }})</span></div>
+                  <div class="small">{{ g.date }} · {{ g.event }}</div>
+                </div>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        {# ── Tab: Upload ── #}
+        <div id="tabUpload" class="tabPanel">
+          <div class="row">
+            <label>選擇 PGN 檔案</label>
+            <input type="file" name="pgn" accept=".pgn,.txt" />
+            <div class="hint">支援 .pgn 和 .txt 格式。</div>
+          </div>
+        </div>
+
+        {# ── Tab: Paste ── #}
+        <div id="tabPaste" class="tabPanel">
+          <div class="row">
+            <label>PGN 文字</label>
+            <textarea name="pgn_text" rows="10" placeholder="貼上 PGN 內容…"></textarea>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        {# ── Collapsible Settings ── #}
+        <div class="settingsToggle" onclick="toggleSettings()">
+          <span id="settingsArrow" class="arrow">▶</span>
+          <strong style="font-size:13px;">Settings</strong>
+          <span class="settingsSummary" id="settingsSummary">
+            {{ (prefill.time_per_move if prefill is defined and prefill.time_per_move is defined else 0.05) }}s / {{
+            (prefill.max_plies if prefill is defined and prefill.max_plies is defined else 200) }} plies
+          </span>
+        </div>
+        <div id="settingsBody" class="settingsBody">
+          <div class="row">
+            <label>Stockfish 路徑</label>
+            <input type="text" name="engine_path"
+              value="{{ (prefill.engine_path if prefill is defined and prefill.engine_path is defined and prefill.engine_path else default_engine) }}"
+              title="可用環境變數 STOCKFISH_PATH 覆蓋" />
+          </div>
+          <div class="grid2">
+            <div class="row">
+              <label>每步思考時間（秒）</label>
+              <input type="number" name="time_per_move" step="0.01" min="0.01"
+                value="{{ (prefill.time_per_move if prefill is defined and prefill.time_per_move is defined else default_time) }}"
+                title="建議 0.05~0.10s" />
+            </div>
+            <div class="row">
+              <label>最多分析 plies</label>
+              <input type="number" name="max_plies" step="1" min="10"
+                value="{{ (prefill.max_plies if prefill is defined and prefill.max_plies is defined else 200) }}"
+                title="太大會很慢，預設 200" />
             </div>
           </div>
         </div>
+
+        {# ── Inline submit (fallback for no-JS) ── #}
+        <div class="btnRow" style="margin-top:4px;">
+          <button id="submitBtn" class="btn" type="submit" style="display:none;">開始分析</button>
+        </div>
+
       </div>
     </form>
-
-    <p class="small" style="margin-top:12px;">MVP：報告/中繼資料會寫到系統 temp（帶 token 可在有限時間內下載）；伺服器重啟後可能失效。</p>
   </div>
+
+  {# ── Sticky Action Bar ── #}
+  <div class="actionBar">
+    <span id="barSelCount" class="actionInfo"></span>
+    <button id="barSubmitBtn" class="btnAnalyze" type="submit" form="" onclick="
+      const f=document.querySelector('form');
+      if(f){
+        const e=new Event('submit',{bubbles:true,cancelable:true});
+        e.submitter=this;
+        if(f.dispatchEvent(e)){f.submit();}
+      }
+    ">🔍 開始分析</button>
+    <span class="actionInfo" style="max-width:180px;">耗時取決於 plies 與每步秒數</span>
+  </div>
+
+  <!-- PWA: Install Banner -->
+  <div id="installBanner"
+    style="display:none;position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+    z-index:200;background:rgba(17,24,39,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border:1px solid rgba(96,165,250,.3);border-radius:14px;padding:12px 18px;
+    display:none;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.4);max-width:420px;width:calc(100% - 32px);">
+    <img src="/static/icons/icon-192.png" alt="" style="width:40px;height:40px;border-radius:10px;" />
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:14px;font-weight:700;">安裝 ChessDNA App</div>
+      <div style="font-size:12px;color:#9ca3af;" id="installHint">加到主畫面，像原生 App 一樣使用</div>
+    </div>
+    <button id="installBtn" onclick="installPWA()" style="padding:8px 16px;border:none;border-radius:10px;
+      background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-size:13px;font-weight:700;
+      cursor:pointer;white-space:nowrap;">安裝</button>
+    <button onclick="dismissInstall()" style="background:none;border:none;color:#9ca3af;
+      font-size:18px;cursor:pointer;padding:4px;line-height:1;">✕</button>
+  </div>
+
+  <!-- PWA: Service Worker + Install Logic -->
+  <script>
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        .catch(() => { });
+    }
+
+    // Android / Chrome install prompt
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (!localStorage.getItem('chessdna_install_dismissed')) {
+        showInstallBanner();
+      }
+    });
+
+    function showInstallBanner() {
+      const b = document.getElementById('installBanner');
+      if (b) b.style.display = 'flex';
+    }
+
+    function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+      }
+      dismissInstall();
+    }
+
+    function dismissInstall() {
+      const b = document.getElementById('installBanner');
+      if (b) b.style.display = 'none';
+      localStorage.setItem('chessdna_install_dismissed', '1');
+    }
+
+    // iOS: detect Safari and show manual instruction
+    window.addEventListener('load', () => {
+      const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      const isStandalone = window.navigator.standalone === true;
+      if (isIos && !isStandalone && !localStorage.getItem('chessdna_install_dismissed')) {
+        const hint = document.getElementById('installHint');
+        const btn = document.getElementById('installBtn');
+        if (hint) hint.textContent = '點 Safari 分享按鈕 → 加到主畫面';
+        if (btn) btn.textContent = '知道了';
+        showInstallBanner();
+      }
+    });
+  </script>
 </body>
+
 </html>
